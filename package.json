@@ -1,0 +1,58 @@
+{
+  "name": "simpleimage",
+  "private": true,
+  "version": "0.1.0",
+  "description": "A local desktop image compression tool for Apple Silicon era Macs.",
+  "author": "wepie",
+  "main": "electron/main.cjs",
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently -k \"npm:dev:web\" \"npm:dev:desktop\"",
+    "dev:web": "vite",
+    "dev:desktop": "wait-on tcp:5173 && SIMPLEIMAGE_DEV_SERVER_URL=http://127.0.0.1:5173 electron .",
+    "build": "tsc && vite build",
+    "start": "electron .",
+    "assets:icons": "node scripts/generate-icons.mjs",
+    "pack:mac": "npm run build && npm run assets:icons && electron-builder --mac dir --arm64",
+    "dist:mac": "npm run build && npm run assets:icons && electron-builder --mac dmg zip --arm64"
+  },
+  "dependencies": {
+    "preact": "^10.29.2",
+    "sharp": "^0.34.4",
+    "svgo": "^4.0.0"
+  },
+  "devDependencies": {
+    "@preact/preset-vite": "^2.10.5",
+    "concurrently": "^9.2.1",
+    "electron": "^37.0.0",
+    "electron-builder": "^26.8.1",
+    "typescript": "~6.0.2",
+    "vite": "^8.0.12",
+    "wait-on": "^9.0.1"
+  },
+  "build": {
+    "appId": "tech.xinxiao.simpleimage",
+    "productName": "SimpleImageCompress",
+    "directories": {
+      "buildResources": "build",
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "package.json",
+      "node_modules/**/*"
+    ],
+    "asar": true,
+    "artifactName": "${productName}-${version}-${arch}.${ext}",
+    "mac": {
+      "category": "public.app-category.graphics-design",
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "icon": "build/icon.icns"
+    },
+    "dmg": {}
+  }
+}
