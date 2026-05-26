@@ -79,9 +79,13 @@ export function AtlasIncrementalView() {
               <button class="path-button" onClick={() => void handlePickManifest()}>
                 {basename(state.manifestPath) || "选择旧版 atlas.manifest.json..."}
               </button>
+              <span class="param-hint">
+                注意：要选 <code>*.manifest.json</code>（atlas-pack 导出时生成的指纹文件），
+                不是 atlas.json / .plist / .css 这种元数据本身。
+              </span>
               {manifestInfo && (
                 <span class="param-hint">
-                  旧 atlas：{FORMAT_LABELS[manifestInfo.format] || manifestInfo.format} · {manifestInfo.total} 个子图
+                  ✓ 已加载：{FORMAT_LABELS[manifestInfo.format] || manifestInfo.format} · {manifestInfo.total} 个子图
                 </span>
               )}
             </div>

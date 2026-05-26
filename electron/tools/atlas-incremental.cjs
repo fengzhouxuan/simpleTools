@@ -188,9 +188,23 @@ async function composePageImage(page, options) {
 
 async function readManifest(manifestPath) {
   const raw = await fs.readFile(manifestPath, "utf8");
-  const manifest = JSON.parse(raw);
-  if (!manifest || manifest.version !== 1) {
-    throw new Error("不是受支持的 manifest 文件（version != 1）");
+  let manifest;
+  try {
+    manifest = JSON.parse(raw);
+  } catch {
+    throw new Error(
+      `${path.basename(manifestPath)} 不是合法 JSON。增量打包需要 atlas-pack 导出时生成的 *.manifest.json（而不是 atlas.json 元数据本身）。`,
+    );
+  }
+  // 普通 TexturePacker JSON 通常有 frames + meta，没有 entries/version
+  if (!manifest || manifest.version !== 1 || !Array.isArray(manifest.entries)) {
+    const looksLikeMetadata =
+      manifest && (manifest.frames || manifest.meta?.image);
+    throw new Error(
+      looksLikeMetadata
+        ? `${path.basename(manifestPath)} 看起来是元数据文件（atlas.json/plist 那种），不是 *.manifest.json。请在 atlas-pack 导出目录里找 "<outputName>.manifest.json"。`
+        : `${path.basename(manifestPath)} 不是支持的 manifest 格式（缺 version=1 或 entries 字段）。请选 atlas-pack 导出时生成的 *.manifest.json。`,
+    );
   }
   return manifest;
 }
