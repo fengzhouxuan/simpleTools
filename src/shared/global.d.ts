@@ -1,6 +1,9 @@
 import type {
   AtlasExportPayload,
   AtlasExportResult,
+  AtlasIncrementalDiff,
+  AtlasIncrementalPayload,
+  AtlasIncrementalResult,
   AtlasInspectResult,
   AtlasPackOptions,
   AtlasPackResult,
@@ -44,6 +47,18 @@ declare global {
             metadataPath: string;
           }) => Promise<AtlasInspectResult>;
           export: (payload: AtlasUnpackPayload) => Promise<AtlasUnpackResult>;
+        };
+        atlasIncremental: {
+          inspect: (payload: {
+            manifestPath: string;
+            newSourcePaths: string[];
+          }) => Promise<{
+            diff: AtlasIncrementalDiff;
+            manifest: { format: string; total: number };
+          }>;
+          export: (
+            payload: AtlasIncrementalPayload,
+          ) => Promise<AtlasIncrementalResult>;
         };
       };
     };

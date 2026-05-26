@@ -1,8 +1,15 @@
 const fs = require("fs/promises");
 const path = require("path");
+const crypto = require("crypto");
 const sharp = require("sharp");
 const { MaxRectsPacker } = require("maxrects-packer");
 const core = require("../core/fs.cjs");
+
+// 计算文件内容 sha1（增量打包差异检测用）
+async function hashFile(filePath) {
+  const buf = await fs.readFile(filePath);
+  return crypto.createHash("sha1").update(buf).digest("hex");
+}
 
 // ============================================================
 // 1) loadInputs: 读源图元数据 + 可选 trim 检测
@@ -365,6 +372,7 @@ async function exportAtlas(payload) {
 
   const pageImagePaths = [];
   const metadataPaths = [];
+  const pageImageNames = [];
   const multi = result.pages.length > 1;
 
   for (const page of result.pages) {
@@ -380,6 +388,7 @@ async function exportAtlas(payload) {
     const buffer = await composePageImage(page, payload);
     await fs.writeFile(imagePath, buffer);
     pageImagePaths.push(imagePath);
+    pageImageNames.push(imageName);
 
     const metadata = serializeMetadata(page, imageName, payload.format);
     const metaName = `${payload.outputName}${suffix}.${metadataExtension(payload.format)}`;
@@ -392,7 +401,45 @@ async function exportAtlas(payload) {
     );
   }
 
-  return { pageImagePaths, metadataPaths };
+  // 顺手写 manifest（给后续增量打包用）。失败不阻塞主流程。
+  let manifestPath = null;
+  try {
+    const entries = [];
+    for (const page of result.pages) {
+      for (const frame of page.frames) {
+        const hash = await hashFile(frame.sourcePath).catch(() => "");
+        entries.push({
+          name: frame.name,
+          sourcePath: frame.sourcePath,
+          hash,
+          page: page.index,
+          x: frame.x,
+          y: frame.y,
+          width: frame.width,
+          height: frame.height,
+          rotated: frame.rotated,
+          trimmed: frame.trimmed,
+          sourceWidth: frame.sourceWidth,
+          sourceHeight: frame.sourceHeight,
+          trimX: frame.trimX,
+          trimY: frame.trimY,
+        });
+      }
+    }
+    const manifest = {
+      version: 1,
+      app: "SimpleImageCompress",
+      format: payload.format,
+      pageImageNames,
+      entries,
+    };
+    manifestPath = path.join(payload.outputDir, `${payload.outputName}.manifest.json`);
+    await fs.writeFile(manifestPath, JSON.stringify(manifest, null, 2), "utf8");
+  } catch (e) {
+    console.error("[atlas-pack] manifest write failed:", e.message);
+  }
+
+  return { pageImagePaths, metadataPaths, manifestPath };
 }
 
 // ============================================================
@@ -409,5 +456,6 @@ module.exports = {
   exportAtlas,
   serializeMetadata,
   metadataExtension,
+  hashFile,
   register,
 };

@@ -256,6 +256,12 @@ npm run dist:mac
   - `parseMetadata()` 4 种格式各自解析为统一的 `ParsedAtlasFrame[]`（plist 用正则；JSON 直接 parse；CSS 正则识别 `.sprite-xxx` 规则）
   - `unpackAtlas()` 用 `sharp(atlasBuffer).extract()` 切矩形 → `rotate(-90)` 还原 rotate → 可选 composite 到 sourceSize 还原 trim → 写 PNG
 
+- [electron/tools/atlas-incremental.cjs](/Users/wepie/Documents/Github/SimpleImage/electron/tools/atlas-incremental.cjs)
+  图集增量打包，依赖 atlas-pack 顺手写出的 `*.manifest.json`（含每个子图的 sha1）：
+  - `diffSources()` 按 name 匹配，hash 不同的算 modified，新增的 added，旧有新无的 removed
+  - `exportIncremental()` 走"双层 atlas"策略：旧 atlas 直接复制（不改像素），added + modified 用 MaxRects 打到附加页（`-patch-N.png`），新 manifest 中 unchanged 保留原坐标、变化的指向附加页
+  - 这种策略修改/删除的旧像素仍残留在原 atlas，多次增量后会累积"垃圾"，需要偶尔走一次全量重打回收
+
 ### 6.2 预加载层
 
 文件：[electron/preload.cjs](/Users/wepie/Documents/Github/SimpleImage/electron/preload.cjs)
@@ -269,6 +275,8 @@ npm run dist:mac
 - `tools.atlasPack.export(payload)` — 图集打包并写文件
 - `tools.atlasUnpack.inspect(payload)` — 解析图集元数据返回 frame 列表
 - `tools.atlasUnpack.export(payload)` — 拆分图集并写出各子图
+- `tools.atlasIncremental.inspect(payload)` — 按 manifest + 新源图列出差异
+- `tools.atlasIncremental.export(payload)` — 生成附加页 + 新 manifest
 
 新增工具的能力时遵循这条链路：
 

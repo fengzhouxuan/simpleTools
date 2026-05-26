@@ -1242,6 +1242,79 @@ input[type="checkbox"] {
   flex: 1;
 }
 
+/* atlas-incremental 差异面板 */
+.diff-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  padding: 12px 16px;
+  background: var(--surface-card);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+}
+
+.diff-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 12px 10px;
+  border-radius: var(--radius-control);
+  background: rgba(0, 0, 0, 0.03);
+}
+
+@media (prefers-color-scheme: dark) {
+  .diff-chip {
+    background: rgba(255, 255, 255, 0.04);
+  }
+}
+
+.diff-chip strong {
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1;
+}
+
+.diff-chip span {
+  color: var(--text-secondary);
+  font-size: 11px;
+}
+
+.diff-chip.diff-added {
+  background: rgba(52, 199, 89, 0.12);
+}
+.diff-chip.diff-added strong {
+  color: #1f8a3e;
+}
+
+.diff-chip.diff-modified {
+  background: rgba(0, 122, 255, 0.12);
+}
+.diff-chip.diff-modified strong {
+  color: var(--accent);
+}
+
+.diff-chip.diff-removed {
+  background: rgba(255, 59, 48, 0.10);
+}
+.diff-chip.diff-removed strong {
+  color: #c92e25;
+}
+
+.diff-chip.diff-unchanged {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+@media (prefers-color-scheme: dark) {
+  .diff-chip.diff-added strong {
+    color: #30d158;
+  }
+  .diff-chip.diff-removed strong {
+    color: #ff453a;
+  }
+}
+
 /* ===== GIF/SVG 兼容性警告横幅 ===== */
 
 .compat-warning {

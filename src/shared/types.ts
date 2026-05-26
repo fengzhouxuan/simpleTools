@@ -103,6 +103,7 @@ export type AtlasExportPayload = AtlasPackOptions & {
 export type AtlasExportResult = {
   pageImagePaths: string[];    // 写入的 PNG 路径
   metadataPaths: string[];     // 写入的元数据路径
+  manifestPath: string | null; // 顺手写出的 manifest（给后续增量用）
 };
 
 // ===== atlas-unpack =====
@@ -139,4 +140,63 @@ export type AtlasUnpackPayload = {
 export type AtlasUnpackResult = {
   outputPaths: string[];
   skipped: { name: string; reason: string }[];
+};
+
+// ===== atlas-incremental =====
+
+// 每个子图的"身份指纹"：hash 用于差异检测，atlas 字段用于增量时复用坐标
+export type AtlasManifestEntry = {
+  name: string;          // 子图 frame 名（与元数据中一致）
+  sourcePath: string;    // 打包时使用的源图路径（绝对路径）
+  hash: string;          // 源图内容 sha1
+  page: number;          // 在第几页（0-based）
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  rotated: boolean;
+  trimmed: boolean;
+  sourceWidth: number;
+  sourceHeight: number;
+  trimX: number;
+  trimY: number;
+};
+
+export type AtlasManifest = {
+  version: 1;
+  app: "SimpleImageCompress";
+  format: AtlasMetadataFormat;
+  pageImageNames: string[];   // 每页对应的 atlas 图片文件名
+  entries: AtlasManifestEntry[];
+};
+
+export type AtlasIncrementalDiff = {
+  added: string[];        // 新增子图的源路径
+  modified: string[];     // 内容变化的子图（按 name 匹配，源路径可能不同）
+  removed: string[];      // 旧 manifest 有但新源里没的 name
+  unchanged: string[];    // 内容相同的 name
+};
+
+export type AtlasIncrementalPayload = {
+  manifestPath: string;     // 旧的 atlas.manifest.json 路径
+  newSourcePaths: string[]; // 新一批源图（即将作为新 atlas 内容）
+  outputDir: string;
+  outputName: string;       // 输出文件名前缀
+  format: AtlasMetadataFormat;
+  // 增量打包用的参数（仅作用于附加页）
+  maxWidth: number;
+  maxHeight: number;
+  padding: number;
+  allowRotate: boolean;
+  pot: boolean;
+  trim: boolean;
+};
+
+export type AtlasIncrementalResult = {
+  diff: AtlasIncrementalDiff;
+  patchImagePath: string | null;   // 新增的附加页 PNG 路径（无变化时为 null）
+  pageImagePaths: string[];        // 最终所有页（原 atlas + 附加页）
+  metadataPaths: string[];
+  manifestPath: string;            // 新写出的 manifest
+  fellBackToFullRepack: boolean;   // 附加页装不下时是否退化为全量重打（暂未启用）
 };

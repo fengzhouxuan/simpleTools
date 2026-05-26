@@ -35,6 +35,7 @@ SimpleImageCompress 当前是一个纯本地的桌面图片压缩工具原型，
 - 压缩结果列表显示前后大小对比、打开文件、Finder 显示、失败重试
 - 图集打包（MaxRects 算法）：实时预览、参数面板、4 种元数据格式（Cocos2d-x plist / TexturePacker JSON Hash / JSON Array / CSS Sprite）、支持 trim / rotate / POT / 多页输出
 - 图集拆分：解析 plist / JSON / CSS 元数据，把图集还原为单图，支持 trim/rotate 还原
+- 图集增量打包：按 manifest 检测差异（新增/修改/删除/复用），未变子图保留原坐标，变化的打包到附加页 — 适合做图集 patch
 
 ## 环境要求
 
@@ -98,9 +99,9 @@ npm run dist:mac
 
 ## 当前优先事项
 
-压缩、图集打包、图集拆分三个模块已完成 MVP。剩余优先事项：
+四个核心工具（压缩 / 图集打包 / 图集拆分 / 图集增量打包）MVP 全部完成。剩余优先事项：
 
-1. 图集增量打包（变更资源的增量更新）
+1. 增量打包累积"垃圾像素"过多时的全量重打回收
 2. 接入 notarization 和正式发布流程
 3. 大文件/长任务的流式进度反馈（目前批量任务只有整体 loading）
 

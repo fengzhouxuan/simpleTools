@@ -24,8 +24,8 @@ export const toolMeta: Record<ToolKey, ToolMeta> = {
   },
   "atlas-incremental": {
     label: "增量打包",
-    status: "planned",
-    description: "针对变更资源的增量图集更新能力。",
+    status: "available",
+    description: "基于旧 manifest 检测差异，未变子图保留原坐标，附加页装新增/修改。",
   },
   "atlas-unpack": {
     label: "图集拆分",

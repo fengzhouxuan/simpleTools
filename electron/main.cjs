@@ -5,6 +5,7 @@ const core = require("./core/fs.cjs");
 const compress = require("./tools/compress.cjs");
 const atlasPack = require("./tools/atlas-pack.cjs");
 const atlasUnpack = require("./tools/atlas-unpack.cjs");
+const atlasIncremental = require("./tools/atlas-incremental.cjs");
 
 function resolveRendererEntry() {
   const devServerUrl = process.env.SIMPLEIMAGE_DEV_SERVER_URL;
@@ -67,6 +68,7 @@ core.register(ipcMain);
 compress.register(ipcMain);
 atlasPack.register(ipcMain);
 atlasUnpack.register(ipcMain);
+atlasIncremental.register(ipcMain);
 
 app.whenReady().then(() => {
   createWindow();
