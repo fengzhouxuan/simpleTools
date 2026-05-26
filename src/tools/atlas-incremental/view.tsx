@@ -182,8 +182,8 @@ export function AtlasIncrementalView() {
         <section class="stage-panel" style={{ minHeight: isEmpty ? "180px" : "240px" }}>
           <FileImportZone
             empty={isEmpty}
-            emptyTitle="拖入新版小图（完整集合）"
-            emptyDefaultHint="工具会按文件名+内容 hash 自动比对差异"
+            emptyTitle="拖入新版完整子图集合"
+            emptyDefaultHint="必须包含未变 + 修改 + 新增的全部子图（按文件名 basename 与旧 atlas 比对）"
             onPathsDropped={(paths) => void handlePathsDropped(paths)}
           >
             <div class="atlas-input-list">
@@ -217,6 +217,21 @@ export function AtlasIncrementalView() {
             </div>
           </section>
         )}
+
+        {/* 诊断：新源跟旧 atlas 几乎不重叠时，大概率是漏导入或文件名对不上 */}
+        {diff &&
+          diff.removed.length > 0 &&
+          diff.unchanged.length === 0 &&
+          diff.modified.length === 0 && (
+            <section class="compat-warning">
+              <span class="compat-icon" aria-hidden="true">⚠</span>
+              <span class="compat-text">
+                新源里没有任何文件名跟旧 atlas 的子图匹配（所有 {diff.removed.length} 个旧子图被判为"删除"）。
+                增量打包按文件名 basename 比对 — 请确认：① 新源是<strong>完整集合</strong>（含未变的子图）；
+                ② 文件名跟旧 atlas 里的 frame name 一致（通常就是当年打包时的源文件名）。
+              </span>
+            </section>
+          )}
 
         {/* 操作栏 */}
         <section class="action-bar">
@@ -392,26 +407,31 @@ export function AtlasIncrementalView() {
         )}
 
         {state.lastExport && (
-          <section class="summary-banner">
-            <strong>增量完成</strong>
-            <span>
-              附加页 {state.lastExport.patchImagePath ? "1" : "0"} 张 ·{" "}
-              共 {state.lastExport.pageImagePaths.length} 页 ·{" "}
-              {state.lastExport.metadataPaths.length} 份元数据
+          <>
+            <section class="summary-banner">
+              <strong>增量完成</strong>
+              <span>
+                共 {state.lastExport.pageImagePaths.length} 页（含旧 atlas {state.lastExport.pageImagePaths.length - (state.lastExport.patchImagePath ? 1 : 0)} 张 + 附加页 {state.lastExport.patchImagePath ? "1" : "0"} 张） ·{" "}
+                {state.lastExport.metadataPaths.length} 份元数据
+              </span>
+              <span class="summary-spacer" />
+              <button
+                class="ghost-button"
+                onClick={() => {
+                  const first =
+                    state.lastExport?.patchImagePath ||
+                    state.lastExport?.pageImagePaths[0];
+                  if (first) void window.simpleImage.core.fs.revealInFolder(first);
+                }}
+              >
+                在 Finder 中显示
+              </button>
+            </section>
+            <span class="param-hint" style={{ paddingLeft: "16px" }}>
+              注意：增量打包采用"双层 atlas"策略 — 旧 atlas 保留不动（修改/删除的子图像素仍在），
+              新增/修改的子图打到附加页。新 metadata 同时引用两张图，给引擎用时一起 load。
             </span>
-            <span class="summary-spacer" />
-            <button
-              class="ghost-button"
-              onClick={() => {
-                const first =
-                  state.lastExport?.patchImagePath ||
-                  state.lastExport?.pageImagePaths[0];
-                if (first) void window.simpleImage.core.fs.revealInFolder(first);
-              }}
-            >
-              在 Finder 中显示
-            </button>
-          </section>
+          </>
         )}
       </div>
     </section>

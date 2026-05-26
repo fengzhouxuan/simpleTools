@@ -540,6 +540,13 @@ input[type="checkbox"] {
   scrollbar-color: var(--hairline-strong) transparent;
 }
 
+/* flex column 下子元素默认 flex-shrink: 1 会互相挤压，导致 input/按钮被裁切。
+   强制 0，让 sections 按自然高度排列，由父容器滚动 */
+.tool-panel .tuya-content > section,
+.tool-panel .tuya-content > div {
+  flex-shrink: 0;
+}
+
 .tool-panel .tuya-content::-webkit-scrollbar {
   width: 8px;
 }
