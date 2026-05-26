@@ -70,42 +70,59 @@ SimpleImageCompress 当前是一个纯本地的 macOS 桌面图片压缩工具�
 ```text
 SimpleImage/
 ├─ electron/
-│  ├─ main.cjs                # 主进程入口：窗口、生命周期、注册各工具 IPC
+│  ├─ main.cjs                # 入口：窗口、native menu、生命周期、注册各模块 IPC
 │  ├─ preload.cjs             # contextBridge 暴露 window.simpleImage.*
 │  ├─ core/
-│  │  └─ fs.cjs               # 通用文件能力：选择、扫描、打开、Finder
+│  │  ├─ fs.cjs               # 通用文件能力：选择、扫描、打开、Finder、openExternal
+│  │  ├─ settings.cjs         # userData/settings.json KV 持久化
+│  │  └─ clipboard.cjs        # shell.clipboard.writeText
 │  └─ tools/
-│     └─ compress.cjs         # 压缩工具的 IPC 与 sharp/svgo 实现
+│     ├─ compress.cjs         # 压缩工具：sharp/svgo，目标体积二分查找
+│     ├─ atlas-pack.cjs       # 图集打包：maxrects + sharp.composite + 4 种元数据
+│     ├─ atlas-unpack.cjs     # 图集拆分：解析元数据 + sharp.extract
+│     ├─ atlas-incremental.cjs# 增量打包（merge 模式 + tmpdir 缓存）
+│     └─ icon-gen.cjs         # 图标生成：iconutil / to-ico / 多尺寸 PNG
 ├─ src/
 │  ├─ main.tsx                # Preact 渲染入口
-│  ├─ App.tsx                 # 根组件，承载 Provider + 整窗布局
-│  ├─ style.css               # 全部样式（macOS Settings 风，含暗色模式）
+│  ├─ App.tsx                 # 根组件，承载多层 Provider + 整窗布局
+│  ├─ style.css               # 全部样式（macOS Settings 风 + 暗色 + 主题切换 + 动效）
 │  ├─ state/
-│  │  └─ navigation.tsx       # 全局导航 state（currentTool）
+│  │  └─ navigation.tsx       # 全局导航 state（currentTool）+ 菜单 IPC 接入
 │  ├─ shared/
-│  │  ├─ types.ts             # 跨模块类型定义
+│  │  ├─ types.ts             # 跨模块类型
 │  │  ├─ global.d.ts          # window.simpleImage 类型声明
-│  │  └─ format.ts            # 文件大小/路径/比率格式化
+│  │  ├─ format.ts            # 文件大小/路径/比率格式化
+│  │  ├─ sibling-guess.ts     # atlas ↔ metadata 同名匹配 helper
+│  │  ├─ use-remembered.ts    # 把 state 字段绑到 settings 持久化的 hook
+│  │  ├─ use-primary-action.ts# Cmd+Enter 主操作 hook
+│  │  ├─ theme.tsx            # ThemeProvider (auto/light/dark)
+│  │  └─ toast.tsx            # ToastProvider + useToast
 │  ├─ components/             # 跨工具复用组件
-│  │  ├─ workspace.tsx        # 工具内容路由
+│  │  ├─ workspace.tsx        # 工具内容路由（含 ErrorBoundary 包裹）
 │  │  ├─ tool-nav.tsx         # 左侧导航
-│  │  ├─ home.tsx             # 首页视图
-│  │  ├─ placeholder.tsx      # 图集等未实现工具的占位
+│  │  ├─ home.tsx             # 首页 dashboard
+│  │  ├─ placeholder.tsx      # 占位组件（目前未使用）
 │  │  ├─ file-import.tsx      # 拖拽/选择导入区
-│  │  └─ result-list.tsx      # 文件/结果列表，支持 actions
+│  │  ├─ result-list.tsx      # 文件/结果列表，支持 actions
+│  │  ├─ progress-bar.tsx     # 流式进度条
+│  │  ├─ spinner.tsx          # 加载圈
+│  │  ├─ copy-path-button.tsx # 复制路径按钮（toast 反馈）
+│  │  ├─ theme-switcher.tsx   # 标题栏主题切换控件
+│  │  └─ error-boundary.tsx   # Preact 错误边界
 │  ├─ tools/
 │  │  ├─ tool-meta.ts         # 工具清单元数据
-│  │  └─ compress/
-│  │     ├─ view.tsx          # 压缩工具主视图
-│  │     ├─ state.tsx         # 压缩工具 state（reducer + Provider）
-│  │     ├─ presets.ts        # 4 个内置预设
-│  │     └─ preset-bar.tsx    # 预设选择条
+│  │  ├─ compress/            # 压缩
+│  │  ├─ atlas-pack/          # 图集打包（含实时预览 canvas）
+│  │  ├─ atlas-unpack/        # 图集拆分
+│  │  ├─ atlas-incremental/   # 增量打包（merge 模式）
+│  │  └─ icon-gen/            # 图标生成
 │  └─ assets/
 ├─ scripts/
-│  └─ generate-icons.mjs      # 生成 icon.svg/png/icns
+│  └─ generate-icons.mjs      # 生成应用本身的 icon.icns
 ├─ build/                     # 图标等构建资源
 ├─ dist/                      # Vite 构建产物
 ├─ release/                   # Electron 打包产物
+├─ index.html                 # 含初始 splash（CSS-only）
 ├─ package.json
 └─ README.md
 ```
@@ -225,15 +242,27 @@ npm run dist:mac
 主进程已拆分为：
 
 - [electron/main.cjs](/Users/wepie/Documents/Github/SimpleImage/electron/main.cjs)
-  入口。`createWindow()` 创建窗口（含 `vibrancy: "sidebar"` 取毛玻璃），并调用 `core.register(ipcMain)` 与 `compress.register(ipcMain)` 注册各模块 IPC。
+  入口。`createWindow()` 创建窗口（含 `vibrancy: "sidebar"` 取毛玻璃 + `webSecurity: false` 允许 file:// 预览）。`buildMenu(window)` 注册 native menu（"工具" 子菜单含 Cmd+1~6 切工具 / "视图" 子菜单含主题切换），通过 `webContents.send` 把菜单事件发到渲染层（app:navigate / app:set-theme）。
+  注册顺序：core.fs → settings → clipboard → 各 tool。
   保留 `did-fail-load` / `preload-error` / `render-process-gone` 错误日志。
   设 `SIMPLEIMAGE_DEBUG=1` 启动时会自动打开 DevTools。
 
 - [electron/core/fs.cjs](/Users/wepie/Documents/Github/SimpleImage/electron/core/fs.cjs)
   通用文件能力（不绑定具体工具），导出 `register(ipcMain)`：
   - `collectFromDirectory()` 递归扫描，跳过隐藏文件 / `node_modules` 等大目录，安全阀 `MAX_SCAN_FILES=5000`、`MAX_SCAN_DEPTH=16`
-  - `pickFiles` / `pickFolder` / `scanDirectory` / `normalizePaths`
-  - `openPath` / `revealInFolder`（基于 `shell.openPath` 与 `shell.showItemInFolder`）
+  - `pickFiles` / `pickFolder` / `pickSingleFile(filters)` / `scanDirectory` / `normalizePaths`
+  - `firstExisting(paths)` 按候选挑第一个真实存在的文件（同名匹配用）
+  - `openPath` / `revealInFolder`（基于 `shell.openPath` / `shell.showItemInFolder`）
+  - `openExternal(url)` 走系统浏览器（限 http/https）
+
+- [electron/core/settings.cjs](/Users/wepie/Documents/Github/SimpleImage/electron/core/settings.cjs)
+  KV 持久化（namespace key 风格），存到 `app.getPath("userData")/settings.json`：
+  - 惰性加载 + 内存缓存 + 串行写盘
+  - 用法：`tool:compress:outputDir` / `ui:theme` 等
+  - 渲染层用 `useRemembered(key, value, apply)` hook 一行接入
+
+- [electron/core/clipboard.cjs](/Users/wepie/Documents/Github/SimpleImage/electron/core/clipboard.cjs)
+  封装 `electron.clipboard.writeText`，配合 `CopyPathButton` 用
 
 - [electron/tools/compress.cjs](/Users/wepie/Documents/Github/SimpleImage/electron/tools/compress.cjs)
   压缩工具实现，导出 `register(ipcMain)` 注册 `tools:compress:run`：
@@ -304,10 +333,25 @@ npm run dist:mac
 
 前端用 **Preact** 组件化实现，状态管理走 Context + useReducer。关键模式：
 
-- 全局导航 state 在 [src/state/navigation.tsx](/Users/wepie/Documents/Github/SimpleImage/src/state/navigation.tsx)（只放 `currentTool`）
+- App 顶层 Provider 嵌套：`ThemeProvider` → `ToastProvider` → `NavigationProvider` → 各工具 Provider
+- 全局导航 state 在 [src/state/navigation.tsx](/Users/wepie/Documents/Github/SimpleImage/src/state/navigation.tsx)：放 `currentTool` + 监听 menu 的 `app:navigate` IPC
+- [src/shared/theme.tsx](/Users/wepie/Documents/Github/SimpleImage/src/shared/theme.tsx) 主题管理（auto/light/dark），通过 `data-theme` attr 控制
+- [src/shared/toast.tsx](/Users/wepie/Documents/Github/SimpleImage/src/shared/toast.tsx) 全局 `useToast({ push, dismiss })`，右下角浮层
 - 每个工具的 state 单独 Provider，放在 `src/tools/<tool>/state.tsx`
-- `App.tsx` 嵌套 `NavigationProvider` + `CompressProvider`，后续工具 Provider 同样嵌套
-- 视图通过 [src/components/workspace.tsx](/Users/wepie/Documents/Github/SimpleImage/src/components/workspace.tsx) 根据 `currentTool` 路由
+- 视图通过 [src/components/workspace.tsx](/Users/wepie/Documents/Github/SimpleImage/src/components/workspace.tsx) 根据 `currentTool` 路由，外层包 `ErrorBoundary key={currentTool}` 隔离工具崩溃
+
+共享 hook：
+- `useRemembered(key, value, apply)` → 状态字段挂到 settings 持久化
+- `usePrimaryAction(enabled, action)` → Cmd+Enter 触发主操作
+
+跨工具公共组件（`src/components/`）：
+- `FileImportZone` 拖拽 + children 列表两态
+- `ResultList` 行 actions（打开/Finder/重试）
+- `ProgressBar` 流式进度
+- `Spinner` 加载圈
+- `CopyPathButton` 剪贴板（toast 反馈）
+- `ThemeSwitcher` 标题栏主题切换
+- `ErrorBoundary` 异常隔离
 
 图集打包关键文件：
 

@@ -21,8 +21,11 @@ SimpleImageCompress 当前是一个纯本地的桌面图片压缩工具原型，
 ## 当前能力
 
 - Electron + TypeScript + Preact + Vite 桌面应用
-- macOS 系统设置风格 UI（vibrancy 毛玻璃 + 暗色模式自动跟随系统）
-- 工具首页与多工具导航壳子（按工具模块隔离的 state）
+- macOS 系统设置风格 UI（vibrancy 毛玻璃 + 主题手动切换 auto/light/dark）
+- 应用菜单：Cmd+1~6 切工具，Cmd+Enter 触发当前工具主操作
+- 全局通知 (toast) + 流式进度条 + 错误边界隔离工具崩溃
+- 工具首页 dashboard：能力卡片 + 推荐工作流 + GitHub 链接
+- 按工具隔离的 state；输出目录、主题等偏好自动持久化
 - 本地文件选择、输出目录选择
 - 拖拽导入与目录递归扫描（自动跳过隐藏文件与 node_modules 等大目录）
 - JPG / PNG / GIF 压缩
