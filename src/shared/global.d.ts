@@ -50,11 +50,13 @@ declare global {
         };
         atlasIncremental: {
           inspect: (payload: {
-            manifestPath: string;
+            manifestPath?: string;
+            atlasPath?: string;
+            metadataPath?: string;
             newSourcePaths: string[];
           }) => Promise<{
             diff: AtlasIncrementalDiff;
-            manifest: { format: string; total: number };
+            manifest: { format: string; total: number; fallback: boolean };
           }>;
           export: (
             payload: AtlasIncrementalPayload,

@@ -16,7 +16,11 @@ import type {
 } from "../../shared/types";
 
 export type AtlasIncrementalState = {
-  manifestPath: string;
+  // 两种"旧版本"输入二选一
+  manifestPath: string;          // A) 精确模式
+  atlasPath: string;             // B) fallback 模式之一
+  metadataPath: string;          // B) fallback 模式之二
+
   newSources: InputFile[];
   outputDir: string;
   outputName: string;
@@ -28,7 +32,7 @@ export type AtlasIncrementalState = {
   pot: boolean;
   trim: boolean;
   diff: AtlasIncrementalDiff | null;
-  manifestInfo: { format: string; total: number } | null;
+  manifestInfo: { format: string; total: number; fallback: boolean } | null;
   inspecting: boolean;
   exporting: boolean;
   lastError: string;
@@ -37,6 +41,8 @@ export type AtlasIncrementalState = {
 
 const initialState: AtlasIncrementalState = {
   manifestPath: "",
+  atlasPath: "",
+  metadataPath: "",
   newSources: [],
   outputDir: "",
   outputName: "atlas",
@@ -112,9 +118,12 @@ export function AtlasIncrementalProvider({ children }: { children: ComponentChil
 
   const clearSession = useCallback(() => dispatch({ type: "clear" }), []);
 
-  // manifest 与 sources 齐时自动 inspect
+  // 旧版输入齐 + 有新源时自动 inspect
+  // 旧版输入：manifestPath（精确模式）或 atlasPath+metadataPath（fallback 模式）
   useEffect(() => {
-    if (!state.manifestPath || state.newSources.length === 0) {
+    const hasManifest = !!state.manifestPath;
+    const hasFallbackPair = !!state.atlasPath && !!state.metadataPath;
+    if ((!hasManifest && !hasFallbackPair) || state.newSources.length === 0) {
       if (state.diff !== null) dispatch({ type: "patch", payload: { diff: null } });
       return;
     }
@@ -122,7 +131,9 @@ export function AtlasIncrementalProvider({ children }: { children: ComponentChil
     dispatch({ type: "patch", payload: { inspecting: true, lastError: "" } });
     window.simpleImage.tools.atlasIncremental
       .inspect({
-        manifestPath: state.manifestPath,
+        manifestPath: state.manifestPath || undefined,
+        atlasPath: state.atlasPath || undefined,
+        metadataPath: state.metadataPath || undefined,
         newSourcePaths: state.newSources.map((s) => s.path),
       })
       .then(({ diff, manifest }) => {
@@ -148,13 +159,14 @@ export function AtlasIncrementalProvider({ children }: { children: ComponentChil
     return () => {
       cancelled = true;
     };
-  }, [state.manifestPath, state.newSources]);
+  }, [state.manifestPath, state.atlasPath, state.metadataPath, state.newSources]);
 
   const runExport = useCallback(async () => {
     const c = stateRef.current;
+    const hasOldInput = !!c.manifestPath || (!!c.atlasPath && !!c.metadataPath);
     if (
       c.exporting ||
-      !c.manifestPath ||
+      !hasOldInput ||
       c.newSources.length === 0 ||
       !c.outputDir ||
       !c.diff
@@ -167,7 +179,9 @@ export function AtlasIncrementalProvider({ children }: { children: ComponentChil
     });
     try {
       const result = await window.simpleImage.tools.atlasIncremental.export({
-        manifestPath: c.manifestPath,
+        manifestPath: c.manifestPath || undefined,
+        atlasPath: c.atlasPath || undefined,
+        metadataPath: c.metadataPath || undefined,
         newSourcePaths: c.newSources.map((s) => s.path),
         outputDir: c.outputDir,
         outputName: c.outputName,

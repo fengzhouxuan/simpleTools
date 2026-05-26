@@ -24,7 +24,25 @@ export function AtlasIncrementalView() {
     const picked = await window.simpleImage.core.fs.pickSingleFile([
       { name: "Atlas Manifest", extensions: ["json"] },
     ]);
-    if (picked) patch({ manifestPath: picked });
+    if (!picked) return;
+    // 选了精确 manifest → 清掉 fallback 输入避免冲突
+    patch({ manifestPath: picked, atlasPath: "", metadataPath: "" });
+  };
+
+  const handlePickFallbackAtlas = async () => {
+    const picked = await window.simpleImage.core.fs.pickSingleFile([
+      { name: "Atlas Image", extensions: ["png", "jpg", "jpeg", "webp"] },
+    ]);
+    if (!picked) return;
+    patch({ atlasPath: picked, manifestPath: "" });
+  };
+
+  const handlePickFallbackMetadata = async () => {
+    const picked = await window.simpleImage.core.fs.pickSingleFile([
+      { name: "Atlas Metadata", extensions: ["plist", "json", "css"] },
+    ]);
+    if (!picked) return;
+    patch({ metadataPath: picked, manifestPath: "" });
   };
 
   const handlePickFiles = async () => {
@@ -50,8 +68,10 @@ export function AtlasIncrementalView() {
     if (dir) patch({ outputDir: dir });
   };
 
+  const hasOldInput =
+    !!state.manifestPath || (!!state.atlasPath && !!state.metadataPath);
   const canExport =
-    !!state.manifestPath &&
+    hasOldInput &&
     hasSources &&
     !!state.outputDir &&
     !!diff &&
@@ -71,22 +91,53 @@ export function AtlasIncrementalView() {
       </div>
 
       <div class="tuya-content">
-        {/* 旧 manifest 选择 */}
+        {/* 旧版输入：两种模式 */}
         <section class="settings-grid">
           <div class="settings-card">
             <div class="option-block">
-              <span class="option-label">旧版 manifest（atlas.manifest.json）</span>
+              <span class="option-label">模式 A：精确（推荐）</span>
               <button class="path-button" onClick={() => void handlePickManifest()}>
-                {basename(state.manifestPath) || "选择旧版 atlas.manifest.json..."}
+                {basename(state.manifestPath) || "选择 atlas.manifest.json..."}
               </button>
               <span class="param-hint">
-                注意：要选 <code>*.manifest.json</code>（atlas-pack 导出时生成的指纹文件），
-                不是 atlas.json / .plist / .css 这种元数据本身。
+                选 <code>*.manifest.json</code>（atlas-pack 导出时生成的指纹文件）。
+                能精确区分"未变 / 修改"，未变子图保留原坐标。
               </span>
-              {manifestInfo && (
-                <span class="param-hint">
-                  ✓ 已加载：{FORMAT_LABELS[manifestInfo.format] || manifestInfo.format} · {manifestInfo.total} 个子图
+            </div>
+          </div>
+          <div class="settings-card">
+            <div class="option-block">
+              <span class="option-label">模式 B：fallback（旧 atlas + 旧元数据）</span>
+              <div class="fallback-pair">
+                <button class="path-button" onClick={() => void handlePickFallbackAtlas()}>
+                  {basename(state.atlasPath) || "旧 atlas.png..."}
+                </button>
+                <button class="path-button" onClick={() => void handlePickFallbackMetadata()}>
+                  {basename(state.metadataPath) || "旧 atlas.json / .plist..."}
+                </button>
+              </div>
+              <span class="param-hint">
+                没有 manifest 时用这个。所有同名子图都视为"修改"重新打包，
+                丢失"未变保留位置"的优势，但能处理任意旧图集。
+              </span>
+            </div>
+          </div>
+        </section>
+
+        {/* manifest 加载状态 + 输出目录 */}
+        <section class="settings-grid">
+          <div class="settings-card">
+            <div class="option-block">
+              <span class="option-label">旧版加载状态</span>
+              {manifestInfo ? (
+                <span class="param-hint" style={{ color: "var(--text-primary)" }}>
+                  ✓ {FORMAT_LABELS[manifestInfo.format] || manifestInfo.format} · {manifestInfo.total} 个子图
+                  {manifestInfo.fallback ? "（fallback 模式）" : "（精确模式）"}
                 </span>
+              ) : state.inspecting ? (
+                <span class="param-hint">解析中...</span>
+              ) : (
+                <span class="param-hint">先选择上方"模式 A"或"模式 B"</span>
               )}
             </div>
           </div>

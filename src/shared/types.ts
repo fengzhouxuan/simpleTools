@@ -177,8 +177,14 @@ export type AtlasIncrementalDiff = {
   unchanged: string[];    // 内容相同的 name
 };
 
+// 两种"旧版本"输入二选一：
+//   A) manifestPath：精确模式，能区分 unchanged / modified
+//   B) atlasPath + metadataPath：fallback 模式，所有同名都当 modified
 export type AtlasIncrementalPayload = {
-  manifestPath: string;     // 旧的 atlas.manifest.json 路径
+  manifestPath?: string;
+  atlasPath?: string;
+  metadataPath?: string;
+
   newSourcePaths: string[]; // 新一批源图（即将作为新 atlas 内容）
   outputDir: string;
   outputName: string;       // 输出文件名前缀
@@ -190,6 +196,13 @@ export type AtlasIncrementalPayload = {
   allowRotate: boolean;
   pot: boolean;
   trim: boolean;
+};
+
+export type AtlasIncrementalInspectPayload = {
+  manifestPath?: string;
+  atlasPath?: string;
+  metadataPath?: string;
+  newSourcePaths: string[];
 };
 
 export type AtlasIncrementalResult = {

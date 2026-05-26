@@ -258,7 +258,10 @@ npm run dist:mac
 
 - [electron/tools/atlas-incremental.cjs](/Users/wepie/Documents/Github/SimpleImage/electron/tools/atlas-incremental.cjs)
   图集增量打包，依赖 atlas-pack 顺手写出的 `*.manifest.json`（含每个子图的 sha1）：
-  - `diffSources()` 按 name 匹配，hash 不同的算 modified，新增的 added，旧有新无的 removed
+  - 支持两种"旧版输入"模式：
+    - **精确模式**：用 `manifestPath`，能区分 unchanged / modified
+    - **fallback 模式**：用 `atlasPath + metadataPath`，调 atlas-unpack 的 `parseMetadata` 构造伪 manifest（hash 留空），所有同名子图都视为 modified
+  - `diffSources()` 按 name 匹配；旧 hash 不存在或不一致 → modified
   - `exportIncremental()` 走"双层 atlas"策略：旧 atlas 直接复制（不改像素），added + modified 用 MaxRects 打到附加页（`-patch-N.png`），新 manifest 中 unchanged 保留原坐标、变化的指向附加页
   - 这种策略修改/删除的旧像素仍残留在原 atlas，多次增量后会累积"垃圾"，需要偶尔走一次全量重打回收
 

@@ -5,6 +5,7 @@ const sharp = require("sharp");
 const { MaxRectsPacker } = require("maxrects-packer");
 const core = require("../core/fs.cjs");
 const atlasPack = require("./atlas-pack.cjs");
+const atlasUnpack = require("./atlas-unpack.cjs");
 
 // 用 frame.name（即文件名）当 entity id；hash 决定"内容是否变了"。
 // 输入的新源：路径列表；每个文件的 basename 等价于 entity id。
@@ -37,7 +38,8 @@ function diffSources(oldManifest, newSourcesMeta) {
     const old = oldByName.get(name);
     if (!old) {
       added.push(src.path);
-    } else if (old.hash !== src.hash) {
+    } else if (!old.hash || old.hash !== src.hash) {
+      // 旧 hash 缺失（fallback 模式）或不一致 → 保守视为 modified
       modified.push(src.path);
     } else {
       unchanged.push(name);
@@ -186,6 +188,65 @@ async function composePageImage(page, options) {
 // inspect: 只算 diff，不写盘
 // ============================================================
 
+// 从纯元数据 + atlas 图片构造一份"伪 manifest"
+// hash 留空 → diffSources 会把所有同名 entry 当作 modified（保守）
+async function buildFallbackManifest(atlasPath, metadataPath) {
+  const metaContent = await fs.readFile(metadataPath, "utf8");
+  const format = atlasUnpack.detectFormat(metadataPath, metaContent);
+  const parsed = atlasUnpack.parseMetadata(metaContent, format);
+
+  const atlasName = path.basename(atlasPath);
+  const entries = parsed.frames.map((f) => ({
+    name: f.name,
+    sourcePath: "",       // 未知（不影响增量逻辑）
+    hash: "",             // 触发 fallback 路径
+    page: 0,
+    x: f.x,
+    y: f.y,
+    width: f.width,
+    height: f.height,
+    rotated: f.rotated,
+    trimmed: f.trimmed,
+    sourceWidth: f.sourceWidth,
+    sourceHeight: f.sourceHeight,
+    trimX: f.trimX,
+    trimY: f.trimY,
+  }));
+
+  return {
+    version: 1,
+    app: "SimpleImageCompress",
+    format,
+    pageImageNames: [atlasName],
+    entries,
+    _fallback: true,      // 内部标记，给 inspect 返回用
+  };
+}
+
+// 统一入口：根据 payload 拿到一份可用的 manifest（精确或 fallback）
+// 同时返回"旧 atlas 所在目录"，因为 fallback 时 manifestPath 不存在
+async function loadOldManifest(payload) {
+  if (payload.manifestPath) {
+    const m = await readManifest(payload.manifestPath);
+    return {
+      manifest: m,
+      manifestDir: path.dirname(payload.manifestPath),
+      fallback: false,
+    };
+  }
+  if (payload.atlasPath && payload.metadataPath) {
+    const m = await buildFallbackManifest(payload.atlasPath, payload.metadataPath);
+    return {
+      manifest: m,
+      manifestDir: path.dirname(payload.atlasPath),
+      fallback: true,
+    };
+  }
+  throw new Error(
+    "请选择旧 manifest 文件，或者同时选择 旧 atlas 图片 + 旧元数据 启用 fallback 模式。",
+  );
+}
+
 async function readManifest(manifestPath) {
   const raw = await fs.readFile(manifestPath, "utf8");
   let manifest;
@@ -210,10 +271,17 @@ async function readManifest(manifestPath) {
 }
 
 async function inspectIncremental(payload) {
-  const manifest = await readManifest(payload.manifestPath);
+  const { manifest, fallback } = await loadOldManifest(payload);
   const newSources = await loadNewSourceMeta(payload.newSourcePaths || []);
   const diff = diffSources(manifest, newSources);
-  return { diff, manifest: { format: manifest.format, total: manifest.entries.length } };
+  return {
+    diff,
+    manifest: {
+      format: manifest.format,
+      total: manifest.entries.length,
+      fallback,
+    },
+  };
 }
 
 // ============================================================
@@ -221,8 +289,7 @@ async function inspectIncremental(payload) {
 // ============================================================
 
 async function exportIncremental(payload) {
-  const manifestDir = path.dirname(payload.manifestPath);
-  const oldManifest = await readManifest(payload.manifestPath);
+  const { manifest: oldManifest, manifestDir } = await loadOldManifest(payload);
   const newSources = await loadNewSourceMeta(payload.newSourcePaths);
   const diff = diffSources(oldManifest, newSources);
 

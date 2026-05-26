@@ -1242,6 +1242,13 @@ input[type="checkbox"] {
   flex: 1;
 }
 
+/* atlas-incremental: fallback 模式的两个 picker 并排 */
+.fallback-pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
 /* atlas-incremental 差异面板 */
 .diff-grid {
   display: grid;
