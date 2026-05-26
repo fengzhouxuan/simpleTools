@@ -1770,6 +1770,74 @@ input[type="checkbox"] {
   font-size: 11px;
 }
 
+/* ===== Motion polish ===== */
+
+/* 工具切换时整体 fade-in + 微 slide-up（workspace 用 key={currentTool} 强制重 mount） */
+@keyframes tool-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.tool-panel,
+.tool-home,
+.tool-placeholder,
+.error-fallback {
+  animation: tool-enter 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* 主操作按钮（蓝色填充）按下时缩小，反馈"按到了" */
+.action-primary:not(:disabled):active,
+.tool-card-action:not(:disabled):active {
+  transform: scale(0.97);
+  transition: transform 80ms ease;
+}
+
+/* 首页工具卡 hover 上浮 */
+.tool-card {
+  transition: transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    box-shadow 180ms ease;
+}
+
+.tool-card.is-available:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 0 0 0.5px rgba(0, 0, 0, 0.08),
+    0 8px 20px rgba(0, 0, 0, 0.08);
+}
+
+:root[data-theme="dark"] .tool-card.is-available:hover {
+  box-shadow:
+    0 0 0 0.5px rgba(255, 255, 255, 0.10),
+    0 8px 20px rgba(0, 0, 0, 0.4);
+}
+
+@media (prefers-color-scheme: dark) {
+  .tool-card.is-available:hover {
+    box-shadow:
+      0 0 0 0.5px rgba(255, 255, 255, 0.10),
+      0 8px 20px rgba(0, 0, 0, 0.4);
+  }
+}
+
+/* 尊重"减少动画"系统偏好（可访问性） */
+@media (prefers-reduced-motion: reduce) {
+  .tool-panel,
+  .tool-home,
+  .tool-placeholder,
+  .error-fallback,
+  .tool-card,
+  .toast {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
 /* ===== ErrorBoundary fallback ===== */
 .error-fallback {
   height: 100%;
