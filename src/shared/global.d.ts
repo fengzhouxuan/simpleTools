@@ -36,6 +36,7 @@ declare global {
           normalizePaths: (paths: string[]) => Promise<InputFile[]>;
           openPath: (filePath: string) => Promise<{ ok: boolean; error?: string }>;
           revealInFolder: (filePath: string) => Promise<{ ok: true }>;
+          openExternal: (url: string) => Promise<{ ok: boolean; error?: string }>;
         };
         webUtils: {
           getPathForFile: (file: File) => string;

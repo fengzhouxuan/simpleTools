@@ -165,6 +165,13 @@ function revealInFolder(filePath) {
   return { ok: true };
 }
 
+// 用系统默认浏览器打开外链（首页 GitHub / 文档 链接用）
+async function openExternal(url) {
+  if (!/^https?:\/\//i.test(url)) return { ok: false, error: "only http/https allowed" };
+  await shell.openExternal(url);
+  return { ok: true };
+}
+
 function register(ipcMain) {
   ipcMain.handle("core:fs:pick-files", () => pickFiles());
   ipcMain.handle("core:fs:pick-folder", () => pickFolder());
@@ -174,6 +181,7 @@ function register(ipcMain) {
   ipcMain.handle("core:fs:normalize-paths", (_event, paths) => normalizePaths(paths));
   ipcMain.handle("core:fs:open-path", (_event, filePath) => openPath(filePath));
   ipcMain.handle("core:fs:reveal-in-folder", (_event, filePath) => revealInFolder(filePath));
+  ipcMain.handle("core:fs:open-external", (_event, url) => openExternal(url));
 }
 
 module.exports = {
@@ -191,5 +199,6 @@ module.exports = {
   scanDirectory,
   openPath,
   revealInFolder,
+  openExternal,
   register,
 };

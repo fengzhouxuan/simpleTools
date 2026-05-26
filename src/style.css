@@ -452,6 +452,94 @@ input[type="checkbox"] {
   line-height: 1.8;
 }
 
+/* ===== 工具卡片能力 bullet ===== */
+.tool-card-caps {
+  margin: 12px 0 0;
+  padding-left: 18px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.tool-card-caps li {
+  margin-bottom: 2px;
+}
+
+/* ===== 推荐工作流 ===== */
+.workflow-list {
+  display: grid;
+  gap: 14px;
+  margin-top: 12px;
+}
+
+.workflow-item {
+  display: grid;
+  gap: 4px;
+}
+
+.workflow-title {
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.workflow-steps {
+  margin: 0;
+  padding-left: 20px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.workflow-steps li {
+  margin-bottom: 2px;
+}
+
+.workflow-link {
+  background: transparent;
+  border: none;
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 0;
+  cursor: pointer;
+  -webkit-app-region: no-drag;
+}
+
+.workflow-link:hover {
+  text-decoration: underline;
+}
+
+/* ===== 首页底部 ===== */
+.tool-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 24px;
+  padding: 12px 4px 24px;
+  color: var(--text-tertiary);
+  font-size: 11px;
+}
+
+.tool-footer-sep {
+  opacity: 0.6;
+}
+
+.tool-footer-link {
+  background: transparent;
+  border: none;
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 500;
+  padding: 0;
+  cursor: pointer;
+  -webkit-app-region: no-drag;
+}
+
+.tool-footer-link:hover {
+  text-decoration: underline;
+}
+
 /* ===== Placeholder（图集占位） ===== */
 
 .tool-placeholder {

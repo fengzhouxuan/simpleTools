@@ -11,6 +11,7 @@ contextBridge.exposeInMainWorld("simpleImage", {
       normalizePaths: (paths) => ipcRenderer.invoke("core:fs:normalize-paths", paths),
       openPath: (filePath) => ipcRenderer.invoke("core:fs:open-path", filePath),
       revealInFolder: (filePath) => ipcRenderer.invoke("core:fs:reveal-in-folder", filePath),
+      openExternal: (url) => ipcRenderer.invoke("core:fs:open-external", url),
     },
     webUtils: {
       getPathForFile: (file) => webUtils.getPathForFile(file),
