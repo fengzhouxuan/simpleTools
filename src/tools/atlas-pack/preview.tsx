@@ -58,36 +58,27 @@ async function drawPage(
 
   // 加载并绘制每个 frame
   for (const frame of page.frames) {
+    const dx = frame.x * scale;
+    const dy = frame.y * scale;
+    const dwf = frame.width * scale;
+    const dhf = frame.height * scale;
+    let loadFailed = false;
+
     try {
       const img = await loadImage(frame.sourcePath);
-      const dx = frame.x * scale;
-      const dy = frame.y * scale;
-      const dwf = frame.width * scale;
-      const dhf = frame.height * scale;
 
-      // 注意：frame.x/y/w/h 是在 atlas 中的占位，trim/rotate 后的内容尺寸
-      // 不 trim：直接画原图缩放到 dw/dh
-      // trim：画原图，但只保留 trim 后的区域，需要 sx/sy/sw/sh
-      // rotate：先 translate + rotate
       ctx.save();
       ctx.translate(dx, dy);
 
       if (frame.rotated) {
-        // 主进程约定旋转 90° 顺时针：画图前转 90°，画完归位
-        // 旋转后内容尺寸是 (frame.height, frame.width)
-        // 画到原始坐标后，把内容画到 (0, -frame.width) 位置 + 90° 旋转
+        // 旋转 90° 顺时针：先把坐标原点平移到右上角，再旋转
         ctx.translate(dwf, 0);
         ctx.rotate(Math.PI / 2);
       }
 
-      // 计算源裁剪区
-      // 内容在原图中位于 (trimX, trimY) 起点，大小 (内容宽, 内容高)
-      // rotate 时内容宽=frame.height, 内容高=frame.width
+      // 源图裁剪区：trim 后内容在原图中位于 (trimX, trimY)，大小 (内容宽, 内容高)
       const contentW = frame.rotated ? frame.height : frame.width;
       const contentH = frame.rotated ? frame.width : frame.height;
-      const sw = contentW;
-      const sh = contentH;
-      // 绘制目标尺寸（rotate 后画到逻辑 sw,sh 区域，因为已经旋转过坐标系）
       const drawW = frame.rotated ? dhf : dwf;
       const drawH = frame.rotated ? dwf : dhf;
 
@@ -95,22 +86,32 @@ async function drawPage(
         img,
         frame.trimX,
         frame.trimY,
-        sw,
-        sh,
+        contentW,
+        contentH,
         0,
         0,
         drawW,
         drawH,
       );
       ctx.restore();
+    } catch (e) {
+      loadFailed = true;
+      console.error("[atlas-preview] load failed:", frame.sourcePath, e);
+    }
 
-      // 红色描边
+    // 描边：成功画红框；失败画黄框+斜线，让用户能看到加载失败的位置
+    if (loadFailed) {
+      ctx.strokeStyle = "rgba(255, 149, 0, 0.8)";
+      ctx.lineWidth = 1;
+      ctx.strokeRect(dx + 0.5, dy + 0.5, dwf - 1, dhf - 1);
+      ctx.beginPath();
+      ctx.moveTo(dx, dy);
+      ctx.lineTo(dx + dwf, dy + dhf);
+      ctx.stroke();
+    } else {
       ctx.strokeStyle = "rgba(255, 59, 48, 0.6)";
       ctx.lineWidth = 1;
       ctx.strokeRect(dx + 0.5, dy + 0.5, dwf - 1, dhf - 1);
-    } catch (e) {
-      // 单张失败不阻塞整张图
-      console.error("[atlas-preview] draw failed:", e);
     }
   }
 }

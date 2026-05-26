@@ -30,6 +30,8 @@ function createWindow() {
       preload: path.join(__dirname, "preload.cjs"),
       contextIsolation: true,
       nodeIntegration: false,
+      // 桌面工具需要预览本地图片：允许渲染层加载 file:// 资源
+      webSecurity: false,
     },
   });
 
