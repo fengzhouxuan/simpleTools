@@ -109,10 +109,16 @@ export function AtlasIncrementalView() {
             <div class="option-block">
               <span class="option-label">模式 B：fallback（旧 atlas + 旧元数据）</span>
               <div class="fallback-pair">
-                <button class="path-button" onClick={() => void handlePickFallbackAtlas()}>
+                <button
+                  class={`path-button ${state.atlasPath ? "" : "is-empty"}`}
+                  onClick={() => void handlePickFallbackAtlas()}
+                >
                   {basename(state.atlasPath) || "旧 atlas.png..."}
                 </button>
-                <button class="path-button" onClick={() => void handlePickFallbackMetadata()}>
+                <button
+                  class={`path-button ${state.metadataPath ? "" : "is-empty"}`}
+                  onClick={() => void handlePickFallbackMetadata()}
+                >
                   {basename(state.metadataPath) || "旧 atlas.json / .plist..."}
                 </button>
               </div>
@@ -136,6 +142,16 @@ export function AtlasIncrementalView() {
                 </span>
               ) : state.inspecting ? (
                 <span class="param-hint">解析中...</span>
+              ) : state.atlasPath && !state.metadataPath ? (
+                <span class="param-hint" style={{ color: "var(--accent)" }}>
+                  ⚠ fallback 模式还需要选元数据文件（plist / json / css）
+                </span>
+              ) : !state.atlasPath && state.metadataPath ? (
+                <span class="param-hint" style={{ color: "var(--accent)" }}>
+                  ⚠ fallback 模式还需要选旧 atlas 图片
+                </span>
+              ) : state.newSources.length === 0 ? (
+                <span class="param-hint">已就绪，下一步：导入新版源图</span>
               ) : (
                 <span class="param-hint">先选择上方"模式 A"或"模式 B"</span>
               )}

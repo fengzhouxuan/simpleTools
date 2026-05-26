@@ -1094,6 +1094,19 @@ input[type="checkbox"] {
   background: var(--surface-card-hover);
 }
 
+.path-button.is-empty {
+  color: var(--text-tertiary);
+  font-style: italic;
+  background: rgba(0, 0, 0, 0.02);
+  border-style: dashed;
+}
+
+@media (prefers-color-scheme: dark) {
+  .path-button.is-empty {
+    background: rgba(255, 255, 255, 0.03);
+  }
+}
+
 /* ===== atlas-pack ===== */
 
 .atlas-stage {
