@@ -243,6 +243,13 @@ npm run dist:mac
   - GIF 编码 `effort` 固定为 7（libvips 默认值），避免 quality 推到 9~10 时大 GIF 卡死
   - 每个文件压缩前后会在主进程终端打印 `[compress] start/done/fail` 进度日志
 
+- [electron/tools/atlas-pack.cjs](/Users/wepie/Documents/Github/SimpleImage/electron/tools/atlas-pack.cjs)
+  图集打包工具，注册两条 IPC：`tools:atlas-pack:pack`（只算坐标，不写盘，给预览用）+ `tools:atlas-pack:export`（实际合成 + 写文件）：
+  - `loadInputs()` 用 sharp 读源图元数据，可选 trim 检测（用 `sharp().trim()` 拿 `trimOffsetLeft/Top`）
+  - `packBins()` 调 `maxrects-packer` 算坐标，返回多页结果含利用率
+  - `composePageImage()` 用 sharp.composite 合成一页 PNG（trim 后 buffer + rotate 90°）
+  - `serializeMetadata()` 输出 4 种格式：Cocos2d-x plist / TexturePacker JSON Hash / JSON Array / CSS Sprite，字段命名（frame / rotated / trimmed / spriteSourceSize / sourceSize）对齐 TexturePacker 标准
+
 ### 6.2 预加载层
 
 文件：[electron/preload.cjs](/Users/wepie/Documents/Github/SimpleImage/electron/preload.cjs)
@@ -252,6 +259,8 @@ npm run dist:mac
 - `core.fs.*` — 通用文件能力（pickFiles / pickFolder / scanDirectory / normalizePaths / openPath / revealInFolder）
 - `core.webUtils.getPathForFile(file)` — 从渲染层 File 对象拿真实路径
 - `tools.compress.run(payload)` — 跑批压缩
+- `tools.atlasPack.pack(options)` — 图集打包仅计算坐标（用于预览）
+- `tools.atlasPack.export(payload)` — 图集打包并写文件
 
 新增工具的能力时遵循这条链路：
 
@@ -271,6 +280,14 @@ npm run dist:mac
 - 每个工具的 state 单独 Provider，放在 `src/tools/<tool>/state.tsx`
 - `App.tsx` 嵌套 `NavigationProvider` + `CompressProvider`，后续工具 Provider 同样嵌套
 - 视图通过 [src/components/workspace.tsx](/Users/wepie/Documents/Github/SimpleImage/src/components/workspace.tsx) 根据 `currentTool` 路由
+
+图集打包关键文件：
+
+- [src/tools/atlas-pack/state.tsx](/Users/wepie/Documents/Github/SimpleImage/src/tools/atlas-pack/state.tsx)
+  - 自带"参数变化 → 300ms 防抖触发 pack"的 useEffect，所以渲染层只需 patch 参数，预览自动刷新
+  - `lastExport` 字段保存最近一次导出结果，view 用它显示成功横幅
+- [src/tools/atlas-pack/view.tsx](/Users/wepie/Documents/Github/SimpleImage/src/tools/atlas-pack/view.tsx) 左右双栏：左侧文件列表 / 右侧 canvas 预览
+- [src/tools/atlas-pack/preview.tsx](/Users/wepie/Documents/Github/SimpleImage/src/tools/atlas-pack/preview.tsx) Canvas 预览，按 `pack` 结果用 file:// 加载源图 + drawImage 到坐标，处理 trim 偏移与 90° 旋转
 
 压缩工具关键文件：
 

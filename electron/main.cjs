@@ -3,6 +3,7 @@ const fsSync = require("fs");
 const path = require("path");
 const core = require("./core/fs.cjs");
 const compress = require("./tools/compress.cjs");
+const atlasPack = require("./tools/atlas-pack.cjs");
 
 function resolveRendererEntry() {
   const devServerUrl = process.env.SIMPLEIMAGE_DEV_SERVER_URL;
@@ -61,6 +62,7 @@ function createWindow() {
 
 core.register(ipcMain);
 compress.register(ipcMain);
+atlasPack.register(ipcMain);
 
 app.whenReady().then(() => {
   createWindow();

@@ -19,8 +19,8 @@ export const toolMeta: Record<ToolKey, ToolMeta> = {
   },
   "atlas-pack": {
     label: "图集打包",
-    status: "planned",
-    description: "面向常规图集构建的批处理工具。",
+    status: "available",
+    description: "MaxRects 算法打包小图，输出 plist / JSON / CSS 元数据。",
   },
   "atlas-incremental": {
     label: "增量打包",

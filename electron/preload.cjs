@@ -18,5 +18,9 @@ contextBridge.exposeInMainWorld("simpleImage", {
     compress: {
       run: (payload) => ipcRenderer.invoke("tools:compress:run", payload),
     },
+    atlasPack: {
+      pack: (payload) => ipcRenderer.invoke("tools:atlas-pack:pack", payload),
+      export: (payload) => ipcRenderer.invoke("tools:atlas-pack:export", payload),
+    },
   },
 });

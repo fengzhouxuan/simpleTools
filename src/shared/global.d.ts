@@ -1,4 +1,12 @@
-import type { CompressPayload, CompressionResult, InputFile } from "./types";
+import type {
+  AtlasExportPayload,
+  AtlasExportResult,
+  AtlasPackOptions,
+  AtlasPackResult,
+  CompressPayload,
+  CompressionResult,
+  InputFile,
+} from "./types";
 
 declare global {
   interface Window {
@@ -19,6 +27,10 @@ declare global {
       tools: {
         compress: {
           run: (payload: CompressPayload) => Promise<CompressionResult[]>;
+        };
+        atlasPack: {
+          pack: (payload: AtlasPackOptions) => Promise<AtlasPackResult>;
+          export: (payload: AtlasExportPayload) => Promise<AtlasExportResult>;
         };
       };
     };

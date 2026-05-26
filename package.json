@@ -17,6 +17,7 @@
     "dist:mac": "npm run build && npm run assets:icons && electron-builder --mac dmg zip --arm64"
   },
   "dependencies": {
+    "maxrects-packer": "^2.7.3",
     "preact": "^10.29.2",
     "sharp": "^0.34.4",
     "svgo": "^4.0.0"

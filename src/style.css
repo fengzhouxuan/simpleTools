@@ -1094,6 +1094,138 @@ input[type="checkbox"] {
   background: var(--surface-card-hover);
 }
 
+/* ===== atlas-pack ===== */
+
+.atlas-stage {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  gap: 12px;
+  min-height: 320px;
+}
+
+.atlas-stage-left,
+.atlas-stage-right {
+  background: var(--surface-card);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.atlas-input-list {
+  display: grid;
+  gap: 2px;
+  padding: 8px;
+  max-height: 100%;
+  overflow: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--hairline-strong) transparent;
+}
+
+.atlas-input-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.atlas-input-list::-webkit-scrollbar-thumb {
+  background: var(--hairline-strong);
+  border-radius: 3px;
+}
+
+.atlas-input-row {
+  padding: 6px 10px;
+  border-radius: var(--radius-nav);
+  font-size: 12px;
+  color: var(--text-primary);
+  transition: background-color 80ms ease;
+}
+
+.atlas-input-row:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+@media (prefers-color-scheme: dark) {
+  .atlas-input-row:hover {
+    background: rgba(255, 255, 255, 0.05);
+  }
+}
+
+.atlas-input-name {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.atlas-preview {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 8px;
+}
+
+.atlas-preview.empty {
+  align-items: center;
+  justify-content: center;
+  color: var(--text-tertiary);
+  font-size: 12px;
+}
+
+.atlas-page-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 8px;
+  padding: 3px;
+  border-radius: var(--radius-control);
+  background: rgba(0, 0, 0, 0.04);
+  align-self: flex-start;
+}
+
+@media (prefers-color-scheme: dark) {
+  .atlas-page-tabs {
+    background: rgba(255, 255, 255, 0.06);
+  }
+}
+
+.atlas-page-tab {
+  height: 22px;
+  padding: 0 10px;
+  border-radius: 4px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.atlas-page-tab.is-active {
+  background: var(--surface-card);
+  color: var(--text-primary);
+  box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.08);
+}
+
+.atlas-canvas-wrap {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.atlas-canvas-wrap canvas {
+  border-radius: 4px;
+  box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.1);
+}
+
+.atlas-page-meta {
+  margin-top: 8px;
+  text-align: center;
+  color: var(--text-tertiary);
+  font-size: 11px;
+}
+
 /* ===== GIF/SVG 兼容性警告横幅 ===== */
 
 .compat-warning {
