@@ -142,6 +142,20 @@ SimpleImage/
 npm install
 ```
 
+### 4.1.1 跑单元测试
+
+```bash
+npm test          # 跑一次
+npm run test:watch  # watch 模式
+```
+
+测试用 [vitest](https://vitest.dev/)，覆盖主进程的纯函数：
+- `atlas-unpack` 的 `parseMetadata`（json-hash / json-array / plist / css 四种格式）+ `detectFormat`
+- `atlas-incremental` 的 `computeDiff` + `mergeInputs`（通过 `__test__` 暴露）
+- `atlas-pack` 的 `serializeMetadata`（四种格式输出）+ `metadataExtension`
+
+测试文件位置：源文件同目录 `.test.mjs` 后缀。ESM 测试 import CJS 模块走 default import。
+
 ### 4.2 开发模式
 
 ```bash

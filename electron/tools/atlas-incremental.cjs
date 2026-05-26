@@ -234,4 +234,6 @@ module.exports = {
   exportIncremental,
   clearCache,
   register,
+  // 暴露纯函数给单元测试用
+  __test__: { mergeInputs, computeDiff },
 };

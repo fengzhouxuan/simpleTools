@@ -11,6 +11,8 @@
     "dev:web": "vite",
     "dev:desktop": "wait-on tcp:5173 && SIMPLEIMAGE_DEV_SERVER_URL=http://127.0.0.1:5173 electron .",
     "build": "tsc && vite build",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "start": "electron .",
     "assets:icons": "node scripts/generate-icons.mjs",
     "pack:mac": "npm run build && npm run assets:icons && electron-builder --mac dir --arm64",
@@ -30,6 +32,7 @@
     "electron-builder": "^26.8.1",
     "typescript": "~6.0.2",
     "vite": "^8.0.12",
+    "vitest": "^4.1.7",
     "wait-on": "^9.0.1"
   },
   "build": {
