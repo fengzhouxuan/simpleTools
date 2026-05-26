@@ -7,6 +7,8 @@ import { AtlasIncrementalProvider } from "./tools/atlas-incremental/state";
 import { IconGenProvider } from "./tools/icon-gen/state";
 import { ToolNav } from "./components/tool-nav";
 import { Workspace } from "./components/workspace";
+import { ThemeSwitcher } from "./components/theme-switcher";
+import { ThemeProvider } from "./shared/theme";
 
 export function App() {
   useEffect(() => {
@@ -20,6 +22,7 @@ export function App() {
   }, []);
 
   return (
+    <ThemeProvider>
     <NavigationProvider>
       <CompressProvider>
         <AtlasPackProvider>
@@ -29,6 +32,7 @@ export function App() {
         <main class="tuya-shell">
           <header class="tuya-titlebar">
             <strong>SimpleImageCompress</strong>
+            <ThemeSwitcher />
           </header>
           <div class="workspace-shell">
             <ToolNav />
@@ -43,5 +47,6 @@ export function App() {
         </AtlasPackProvider>
       </CompressProvider>
     </NavigationProvider>
+    </ThemeProvider>
   );
 }
