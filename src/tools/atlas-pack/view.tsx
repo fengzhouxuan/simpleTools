@@ -277,14 +277,14 @@ export function AtlasPackView() {
         </section>
 
         {state.lastError && (
-          <section class="compat-warning">
+          <section class="compat-warning" role="alert">
             <span class="compat-icon" aria-hidden="true">⚠</span>
             <span class="compat-text">{state.lastError}</span>
           </section>
         )}
 
         {state.lastExport && state.lastExport.pageImagePaths.length > 0 && (
-          <section class="summary-banner">
+          <section class="summary-banner" role="status">
             <strong>导出完成</strong>
             <span>
               {state.lastExport.pageImagePaths.length} 张图集 +{" "}

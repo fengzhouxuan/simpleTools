@@ -189,7 +189,7 @@ export function CompressView() {
         <PresetBar />
 
         {showGifIneffectiveHint && (
-          <section class="compat-warning">
+          <section class="compat-warning" role="alert">
             <span class="compat-icon" aria-hidden="true">⚠</span>
             <span class="compat-text">
               {gifResults.length} 个 GIF 压缩效果不明显（{(gifShrinkRatio * 100).toFixed(1)}%）：
@@ -200,7 +200,7 @@ export function CompressView() {
         )}
 
         {incompatibleCount > 0 && (
-          <section class="compat-warning">
+          <section class="compat-warning" role="alert">
             <span class="compat-icon" aria-hidden="true">⚠</span>
             <span class="compat-text">
               {incompatibleCount} 个 GIF/SVG 文件无法导出为 {outputFormatLabel}，跑压缩时会失败
@@ -443,7 +443,7 @@ export function CompressView() {
         </section>
 
         {hasResults && (
-          <section class="summary-banner">
+          <section class="summary-banner" role="status">
             <span>成功 {doneCount}</span>
             <span>失败 {failedCount}</span>
             <span>原始 {formatSize(totalOriginalSize)}</span>

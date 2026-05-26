@@ -203,6 +203,19 @@ export function IconGenView() {
           </div>
         </section>
 
+        {/* 未选源图时给一个引导块 */}
+        {!state.sourcePath && (
+          <section class="empty-card">
+            <div class="empty-state">
+              <div class="empty-state-illustration" aria-hidden="true" />
+              <strong>先选一张大图当源图</strong>
+              <span>
+                推荐 1024×1024 透明背景 PNG。可以点上方"选择源图"，也可以直接拖入
+              </span>
+            </div>
+          </section>
+        )}
+
         {/* 目标格式选择 */}
         <section class="settings-grid icon-target-grid">
           {TARGETS.map((t) => {
@@ -269,14 +282,14 @@ export function IconGenView() {
         )}
 
         {state.lastError && (
-          <section class="compat-warning">
+          <section class="compat-warning" role="alert">
             <span class="compat-icon" aria-hidden="true">⚠</span>
             <span class="compat-text">{state.lastError}</span>
           </section>
         )}
 
         {state.lastResult && state.lastResult.outputPaths.length > 0 && (
-          <section class="summary-banner">
+          <section class="summary-banner" role="status">
             <strong>生成完成</strong>
             <span>
               {state.lastResult.outputPaths.length} 个文件

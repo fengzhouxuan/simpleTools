@@ -1921,6 +1921,14 @@ input[type="checkbox"] {
   margin-top: 6px;
 }
 
+/* 空状态外层卡片：让 .empty-state 在没有父卡片的位置也有 surface 背景 */
+.empty-card {
+  background: var(--surface-card);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+
 /* ===== 空状态通用块 ===== */
 .empty-state {
   display: flex;

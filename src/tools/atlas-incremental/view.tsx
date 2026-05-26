@@ -393,14 +393,14 @@ export function AtlasIncrementalView() {
         </section>
 
         {state.lastError && (
-          <section class="compat-warning">
+          <section class="compat-warning" role="alert">
             <span class="compat-icon" aria-hidden="true">⚠</span>
             <span class="compat-text">{state.lastError}</span>
           </section>
         )}
 
         {state.lastExport && (
-          <section class="summary-banner">
+          <section class="summary-banner" role="status">
             <strong>新图集已生成</strong>
             <span>
               {state.lastExport.pageImagePaths.length} 张 atlas ·{" "}

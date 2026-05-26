@@ -118,7 +118,7 @@ export function AtlasUnpackView() {
           </div>
         </section>
 
-        {inspect && inspect.frames.length > 0 && (
+        {inspect && inspect.frames.length > 0 ? (
           <section class="atlas-stage-left unpack-frame-list">
             <div class="atlas-input-list">
               {inspect.frames.map((f) => (
@@ -133,6 +133,16 @@ export function AtlasUnpackView() {
                   </span>
                 </div>
               ))}
+            </div>
+          </section>
+        ) : (
+          <section class="atlas-stage-left unpack-frame-list">
+            <div class="empty-state">
+              <div class="empty-state-illustration" aria-hidden="true" />
+              <strong>子图列表会出现在这里</strong>
+              <span>
+                选好旧 atlas + 元数据后，工具会解析出所有子图，列在这里供你预览
+              </span>
             </div>
           </section>
         )}
@@ -194,14 +204,14 @@ export function AtlasUnpackView() {
         </section>
 
         {state.lastError && (
-          <section class="compat-warning">
+          <section class="compat-warning" role="alert">
             <span class="compat-icon" aria-hidden="true">⚠</span>
             <span class="compat-text">{state.lastError}</span>
           </section>
         )}
 
         {state.lastExport && (
-          <section class="summary-banner">
+          <section class="summary-banner" role="status">
             <strong>拆分完成</strong>
             <span>
               已输出 {state.lastExport.outputPaths.length} 个子图

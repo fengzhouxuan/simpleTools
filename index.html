@@ -4,9 +4,73 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>SimpleImageCompress</title>
+    <style>
+      /* 初始 splash：在 Preact 挂载前显示。挂载后 #app 内容被替换 → splash 自然消失。
+         CSS 内联在 HTML 里，避免等 CSS 文件加载完才看到。 */
+      html,
+      body,
+      #app {
+        margin: 0;
+        height: 100%;
+      }
+      body {
+        background: transparent;
+        font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      .splash {
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 14px;
+        color: #6e6e73;
+      }
+      .splash-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: #1d1d1f;
+      }
+      .splash-sub {
+        font-size: 11px;
+        color: #86868b;
+      }
+      .splash-spinner {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        border: 1.5px solid #007aff;
+        border-top-color: transparent;
+        animation: splash-rotate 0.7s linear infinite;
+      }
+      @keyframes splash-rotate {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      @media (prefers-color-scheme: dark) {
+        .splash-title {
+          color: #f5f5f7;
+        }
+        .splash-sub {
+          color: #98989d;
+        }
+        .splash-spinner {
+          border-color: #0a84ff;
+          border-top-color: transparent;
+        }
+      }
+    </style>
   </head>
   <body>
-    <div id="app"></div>
+    <div id="app">
+      <div class="splash">
+        <div class="splash-spinner" aria-hidden="true"></div>
+        <div class="splash-title">SimpleImageCompress</div>
+        <div class="splash-sub">正在启动…</div>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
