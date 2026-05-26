@@ -52,6 +52,14 @@ export function ThemeProvider({ children }: { children: ComponentChildren }) {
     void window.simpleImage.core.settings.set(KEY, p);
   }, []);
 
+  // 主进程菜单 → 渲染层切主题
+  useEffect(() => {
+    const unsub = window.simpleImage.onSetTheme((theme) => {
+      setPref(theme);
+    });
+    return unsub;
+  }, [setPref]);
+
   // hydrated 之前避免无谓写盘
   useEffect(() => {
     if (!hydrated) return;

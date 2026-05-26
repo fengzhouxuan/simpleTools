@@ -28,6 +28,11 @@ function buildMenu(window) {
       window.webContents.send("app:navigate", tool);
     }
   };
+  const sendSetTheme = (theme) => {
+    if (window && !window.isDestroyed()) {
+      window.webContents.send("app:set-theme", theme);
+    }
+  };
 
   const template = [
     ...(isMac
@@ -61,7 +66,28 @@ function buildMenu(window) {
         click: () => sendNavigate(item.tool),
       })),
     },
-    { role: "viewMenu" },
+    {
+      label: "视图",
+      submenu: [
+        {
+          label: "主题",
+          submenu: [
+            { label: "跟随系统", click: () => sendSetTheme("auto") },
+            { label: "亮色", click: () => sendSetTheme("light") },
+            { label: "暗色", click: () => sendSetTheme("dark") },
+          ],
+        },
+        { type: "separator" },
+        { role: "reload" },
+        { role: "toggleDevTools" },
+        { type: "separator" },
+        { role: "resetZoom" },
+        { role: "zoomIn" },
+        { role: "zoomOut" },
+        { type: "separator" },
+        { role: "togglefullscreen" },
+      ],
+    },
     { role: "windowMenu" },
   ];
 

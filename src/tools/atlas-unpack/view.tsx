@@ -1,4 +1,5 @@
 import { CopyPathButton } from "../../components/copy-path-button";
+import { Spinner } from "../../components/spinner";
 import {
   guessAtlasForMetadata,
   guessMetadataForAtlas,
@@ -134,7 +135,7 @@ export function AtlasUnpackView() {
               disabled={!canExport}
               onClick={() => void exportUnpack()}
             >
-              {state.exporting ? "拆分中..." : "拆分导出"}
+              {state.exporting ? (<><Spinner />拆分中...</>) : "拆分导出"}
             </button>
           </div>
         </section>

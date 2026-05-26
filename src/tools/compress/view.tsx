@@ -7,6 +7,7 @@ import {
 import { FileImportZone } from "../../components/file-import";
 import { ResultList } from "../../components/result-list";
 import { ProgressBar } from "../../components/progress-bar";
+import { Spinner } from "../../components/spinner";
 import { usePrimaryAction } from "../../shared/use-primary-action";
 import { getQualityLevel, useCompressState } from "./state";
 import { PresetBar } from "./preset-bar";
@@ -36,6 +37,17 @@ export function CompressView() {
   const totalOutputSize = sumBy(succeededResults, (item) => item.outputSize ?? 0);
   const savedBytes = Math.max(0, totalOriginalSize - totalOutputSize);
   const savedRatio = totalOriginalSize > 0 ? savedBytes / totalOriginalSize : 0;
+
+  // 检测 GIF 是否"白压"：跑完后 GIF 文件平均缩减 < 5% 或反而变大
+  const gifResults = succeededResults.filter((r) => r.ext === ".gif");
+  const gifOriginalTotal = sumBy(gifResults, (r) => r.size);
+  const gifOutputTotal = sumBy(gifResults, (r) => r.outputSize ?? 0);
+  const gifShrinkRatio =
+    gifOriginalTotal > 0 ? 1 - gifOutputTotal / gifOriginalTotal : 0;
+  const showGifIneffectiveHint =
+    gifResults.length > 0 &&
+    state.mode === "quality" &&
+    gifShrinkRatio < 0.05;
   const qualityLevel = getQualityLevel(state.quality);
   const currentFiles = hasResults ? state.results : state.files;
   const isEmptyStage = currentFiles.length === 0;
@@ -140,7 +152,7 @@ export function CompressView() {
               disabled={!canRun}
               onClick={() => void runCompression()}
             >
-              {state.running ? "压缩中..." : "再次压缩"}
+              {state.running ? (<><Spinner />压缩中...</>) : "再次压缩"}
             </button>
           </div>
         </section>
@@ -148,6 +160,17 @@ export function CompressView() {
         {state.running && <ProgressBar progress={state.progress} taskLabel="压缩" />}
 
         <PresetBar />
+
+        {showGifIneffectiveHint && (
+          <section class="compat-warning">
+            <span class="compat-icon" aria-hidden="true">⚠</span>
+            <span class="compat-text">
+              {gifResults.length} 个 GIF 压缩效果不明显（{(gifShrinkRatio * 100).toFixed(1)}%）：
+              GIF 是 LZW 压缩格式，靠减颜色数才能瘦身。
+              建议把质量滑块拉到 3-5（颜色数 ~80~130），或切到"最小体积"预设走目标体积模式。
+            </span>
+          </section>
+        )}
 
         {incompatibleCount > 0 && (
           <section class="compat-warning">

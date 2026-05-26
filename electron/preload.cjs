@@ -7,6 +7,12 @@ contextBridge.exposeInMainWorld("simpleImage", {
     ipcRenderer.on("app:navigate", wrapped);
     return () => ipcRenderer.off("app:navigate", wrapped);
   },
+  // 主进程菜单 → 渲染层切主题
+  onSetTheme: (callback) => {
+    const wrapped = (_e, theme) => callback(theme);
+    ipcRenderer.on("app:set-theme", wrapped);
+    return () => ipcRenderer.off("app:set-theme", wrapped);
+  },
   core: {
     fs: {
       pickFiles: () => ipcRenderer.invoke("core:fs:pick-files"),

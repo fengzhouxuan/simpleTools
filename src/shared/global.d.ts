@@ -29,6 +29,9 @@ declare global {
       onNavigate: (
         callback: (tool: import("./types").ToolKey) => void,
       ) => () => void;
+      onSetTheme: (
+        callback: (theme: "auto" | "light" | "dark") => void,
+      ) => () => void;
       core: {
         fs: {
           pickFiles: () => Promise<InputFile[]>;

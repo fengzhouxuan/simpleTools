@@ -1,6 +1,7 @@
 import { FileImportZone } from "../../components/file-import";
 import { ProgressBar } from "../../components/progress-bar";
 import { CopyPathButton } from "../../components/copy-path-button";
+import { Spinner } from "../../components/spinner";
 import {
   guessAtlasForMetadata,
   guessMetadataForAtlas,
@@ -234,7 +235,7 @@ export function AtlasIncrementalView() {
               disabled={!canExport}
               onClick={() => void runExport()}
             >
-              {state.exporting ? "重打中..." : "生成新图集"}
+              {state.exporting ? (<><Spinner />重打中...</>) : "生成新图集"}
             </button>
           </div>
         </section>

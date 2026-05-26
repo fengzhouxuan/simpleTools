@@ -1,6 +1,7 @@
 import { useState } from "preact/hooks";
 import { ProgressBar } from "../../components/progress-bar";
 import { CopyPathButton } from "../../components/copy-path-button";
+import { Spinner } from "../../components/spinner";
 import { usePrimaryAction } from "../../shared/use-primary-action";
 import type { IconExportTarget } from "../../shared/types";
 import { useIconGen } from "./state";
@@ -232,7 +233,7 @@ export function IconGenView() {
               disabled={!canRun}
               onClick={() => void runGenerate()}
             >
-              {state.running ? "生成中..." : "一键生成"}
+              {state.running ? (<><Spinner />生成中...</>) : "一键生成"}
             </button>
           </div>
         </section>

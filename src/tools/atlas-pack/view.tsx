@@ -1,6 +1,7 @@
 import { FileImportZone } from "../../components/file-import";
 import { ProgressBar } from "../../components/progress-bar";
 import { CopyPathButton } from "../../components/copy-path-button";
+import { Spinner } from "../../components/spinner";
 import { usePrimaryAction } from "../../shared/use-primary-action";
 import { useAtlasPack } from "./state";
 import { AtlasPreview } from "./preview";
@@ -108,7 +109,7 @@ export function AtlasPackView() {
               disabled={!canExport}
               onClick={() => void exportAtlas()}
             >
-              {state.exporting ? "导出中..." : "导出图集"}
+              {state.exporting ? (<><Spinner />导出中...</>) : "导出图集"}
             </button>
           </div>
         </section>
