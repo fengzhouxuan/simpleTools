@@ -24,33 +24,24 @@ export function AtlasIncrementalView() {
   const hasSources = state.newSources.length > 0;
   const isEmpty = !hasSources;
 
-  const handlePickManifest = async () => {
-    const picked = await window.simpleImage.core.fs.pickSingleFile([
-      { name: "Atlas Manifest", extensions: ["json"] },
-    ]);
-    if (!picked) return;
-    // 选了精确 manifest → 清掉 fallback 输入避免冲突
-    patch({ manifestPath: picked, atlasPath: "", metadataPath: "" });
-  };
-
-  const handlePickFallbackAtlas = async () => {
+  const handlePickAtlas = async () => {
     const picked = await window.simpleImage.core.fs.pickSingleFile([
       { name: "Atlas Image", extensions: ["png", "jpg", "jpeg", "webp"] },
     ]);
     if (!picked) return;
-    // 自动找同目录同名元数据；用户已选过则不覆盖
-    const autoMetadata = state.metadataPath || (await guessMetadataForAtlas(picked)) || "";
-    patch({ atlasPath: picked, metadataPath: autoMetadata, manifestPath: "" });
+    const autoMetadata =
+      state.metadataPath || (await guessMetadataForAtlas(picked)) || "";
+    patch({ atlasPath: picked, metadataPath: autoMetadata });
   };
 
-  const handlePickFallbackMetadata = async () => {
+  const handlePickMetadata = async () => {
     const picked = await window.simpleImage.core.fs.pickSingleFile([
       { name: "Atlas Metadata", extensions: ["plist", "json", "css"] },
     ]);
     if (!picked) return;
-    // 反向猜：选了元数据但还没选 atlas，自动找同名图片
-    const autoAtlas = state.atlasPath || (await guessAtlasForMetadata(picked)) || "";
-    patch({ metadataPath: picked, atlasPath: autoAtlas, manifestPath: "" });
+    const autoAtlas =
+      state.atlasPath || (await guessAtlasForMetadata(picked)) || "";
+    patch({ metadataPath: picked, atlasPath: autoAtlas });
   };
 
   const handlePickFiles = async () => {
@@ -76,20 +67,14 @@ export function AtlasIncrementalView() {
     if (dir) patch({ outputDir: dir });
   };
 
-  const hasOldInput =
-    !!state.manifestPath || (!!state.atlasPath && !!state.metadataPath);
-  const canExport =
-    hasOldInput &&
-    hasSources &&
-    !!state.outputDir &&
-    !!diff &&
-    !state.exporting;
+  const oldLoaded = !!state.atlasPath && !!state.metadataPath;
+  const canExport = oldLoaded && !!state.outputDir && !!diff && !state.exporting;
 
   const summary = diff
-    ? `+${diff.added.length} 改${diff.modified.length} 删${diff.removed.length} 复用${diff.unchanged.length}`
+    ? `+${diff.added.length} 改${diff.modified.length} 复用${diff.unchanged.length}`
     : state.inspecting
-      ? "对比中..."
-      : "选择旧 manifest 与新源图";
+      ? "解析中..."
+      : "选择旧图集与新散图";
 
   return (
     <section class="tool-panel">
@@ -99,91 +84,79 @@ export function AtlasIncrementalView() {
       </div>
 
       <div class="tuya-content">
-        {/* 旧版输入：两种模式 */}
+        {/* 旧图集输入：atlas + 元数据 */}
         <section class="settings-grid">
           <div class="settings-card">
             <div class="option-block">
-              <span class="option-label">模式 A：精确（推荐）</span>
-              <button class="path-button" onClick={() => void handlePickManifest()}>
-                {basename(state.manifestPath) || "选择 atlas.manifest.json..."}
+              <span class="option-label">旧 atlas 图片</span>
+              <button
+                class={`path-button ${state.atlasPath ? "" : "is-empty"}`}
+                onClick={() => void handlePickAtlas()}
+              >
+                {basename(state.atlasPath) || "选择 atlas.png..."}
               </button>
-              <span class="param-hint">
-                选 <code>*.manifest.json</code>（atlas-pack 导出时生成的指纹文件）。
-                能精确区分"未变 / 修改"，未变子图保留原坐标。
-              </span>
             </div>
           </div>
           <div class="settings-card">
             <div class="option-block">
-              <span class="option-label">模式 B：fallback（旧 atlas + 旧元数据）</span>
-              <div class="fallback-pair">
-                <button
-                  class={`path-button ${state.atlasPath ? "" : "is-empty"}`}
-                  onClick={() => void handlePickFallbackAtlas()}
-                >
-                  {basename(state.atlasPath) || "旧 atlas.png..."}
-                </button>
-                <button
-                  class={`path-button ${state.metadataPath ? "" : "is-empty"}`}
-                  onClick={() => void handlePickFallbackMetadata()}
-                >
-                  {basename(state.metadataPath) || "旧 atlas.json / .plist..."}
-                </button>
-              </div>
+              <span class="option-label">旧元数据</span>
+              <button
+                class={`path-button ${state.metadataPath ? "" : "is-empty"}`}
+                onClick={() => void handlePickMetadata()}
+              >
+                {basename(state.metadataPath) || "选择 atlas.json / .plist / .css..."}
+              </button>
               <span class="param-hint">
-                没有 manifest 时用这个。所有同名子图都视为"修改"重新打包，
-                丢失"未变保留位置"的优势，但能处理任意旧图集。
+                选一边会自动尝试同目录同名匹配另一边
               </span>
             </div>
           </div>
         </section>
 
-        {/* manifest 加载状态 + 输出目录 */}
+        {/* 状态 + 输出目录 */}
         <section class="settings-grid">
           <div class="settings-card">
             <div class="option-block">
-              <span class="option-label">旧版加载状态</span>
+              <span class="option-label">旧图集加载</span>
               {manifestInfo ? (
                 <span class="param-hint" style={{ color: "var(--text-primary)" }}>
-                  ✓ {FORMAT_LABELS[manifestInfo.format] || manifestInfo.format} · {manifestInfo.total} 个子图
-                  {manifestInfo.fallback ? "（fallback 模式）" : "（精确模式）"}
+                  ✓ {FORMAT_LABELS[manifestInfo.format] || manifestInfo.format} ·{" "}
+                  {manifestInfo.total} 个旧子图
                 </span>
               ) : state.inspecting ? (
                 <span class="param-hint">解析中...</span>
               ) : state.atlasPath && !state.metadataPath ? (
                 <span class="param-hint" style={{ color: "var(--accent)" }}>
-                  ⚠ fallback 模式还需要选元数据文件（plist / json / css）
+                  ⚠ 还需要选元数据文件
                 </span>
               ) : !state.atlasPath && state.metadataPath ? (
                 <span class="param-hint" style={{ color: "var(--accent)" }}>
-                  ⚠ fallback 模式还需要选旧 atlas 图片
+                  ⚠ 还需要选 atlas 图片
                 </span>
-              ) : state.newSources.length === 0 ? (
-                <span class="param-hint">已就绪，下一步：导入新版源图</span>
               ) : (
-                <span class="param-hint">先选择上方"模式 A"或"模式 B"</span>
+                <span class="param-hint">先选择旧 atlas + 旧元数据</span>
               )}
             </div>
           </div>
           <div class="settings-card">
             <div class="option-block">
               <span class="option-label">输出目录</span>
-              <button class="path-button" onClick={() => void handlePickOutput()}>
+              <button
+                class={`path-button ${state.outputDir ? "" : "is-empty"}`}
+                onClick={() => void handlePickOutput()}
+              >
                 {state.outputDir || "选择目录..."}
               </button>
-              <span class="param-hint">
-                旧 atlas PNG 会被复制到这里；附加页与新 manifest 也写到这里
-              </span>
             </div>
           </div>
         </section>
 
-        {/* 新源图导入区 */}
+        {/* 新散图导入区 */}
         <section class="stage-panel" style={{ minHeight: isEmpty ? "180px" : "240px" }}>
           <FileImportZone
             empty={isEmpty}
-            emptyTitle="拖入新版完整子图集合"
-            emptyDefaultHint="必须包含未变 + 修改 + 新增的全部子图（按文件名 basename 与旧 atlas 比对）"
+            emptyTitle="拖入要新增 / 替换的散图"
+            emptyDefaultHint="工具会把旧 atlas 拆开 → 跟这些散图合并 → 全量重打一张新 atlas"
             onPathsDropped={(paths) => void handlePathsDropped(paths)}
           >
             <div class="atlas-input-list">
@@ -196,42 +169,23 @@ export function AtlasIncrementalView() {
           </FileImportZone>
         </section>
 
-        {/* 差异面板 */}
+        {/* 差异面板：3 个 chip，无"删除" */}
         {diff && (
-          <section class="diff-grid">
+          <section class="diff-grid diff-grid-3">
             <div class={`diff-chip diff-added`}>
               <strong>{diff.added.length}</strong>
               <span>新增</span>
             </div>
             <div class={`diff-chip diff-modified`}>
               <strong>{diff.modified.length}</strong>
-              <span>修改</span>
-            </div>
-            <div class={`diff-chip diff-removed`}>
-              <strong>{diff.removed.length}</strong>
-              <span>删除</span>
+              <span>修改（同名覆盖）</span>
             </div>
             <div class={`diff-chip diff-unchanged`}>
               <strong>{diff.unchanged.length}</strong>
-              <span>复用</span>
+              <span>复用（旧 atlas 拆出）</span>
             </div>
           </section>
         )}
-
-        {/* 诊断：新源跟旧 atlas 几乎不重叠时，大概率是漏导入或文件名对不上 */}
-        {diff &&
-          diff.removed.length > 0 &&
-          diff.unchanged.length === 0 &&
-          diff.modified.length === 0 && (
-            <section class="compat-warning">
-              <span class="compat-icon" aria-hidden="true">⚠</span>
-              <span class="compat-text">
-                新源里没有任何文件名跟旧 atlas 的子图匹配（所有 {diff.removed.length} 个旧子图被判为"删除"）。
-                增量打包按文件名 basename 比对 — 请确认：① 新源是<strong>完整集合</strong>（含未变的子图）；
-                ② 文件名跟旧 atlas 里的 frame name 一致（通常就是当年打包时的源文件名）。
-              </span>
-            </section>
-          )}
 
         {/* 操作栏 */}
         <section class="action-bar">
@@ -240,7 +194,7 @@ export function AtlasIncrementalView() {
               class="action-button action-primary"
               onClick={() => void handlePickFiles()}
             >
-              添加新源图
+              添加新散图
             </button>
             <button
               class="action-button action-secondary"
@@ -250,12 +204,12 @@ export function AtlasIncrementalView() {
             </button>
           </div>
           <div class="action-meta">
-            <span>{hasSources ? `${state.newSources.length} 个新源` : "等待导入"}</span>
+            <span>{hasSources ? `${state.newSources.length} 个新散图` : "可选：导入要加/改的散图"}</span>
           </div>
           <div class="action-group">
             <button
               class="ghost-button"
-              disabled={!hasSources && !state.manifestPath}
+              disabled={!hasSources && !state.atlasPath}
               onClick={clearSession}
             >
               清空
@@ -265,17 +219,17 @@ export function AtlasIncrementalView() {
               disabled={!canExport}
               onClick={() => void runExport()}
             >
-              {state.exporting ? "导出中..." : "生成增量"}
+              {state.exporting ? "重打中..." : "生成新图集"}
             </button>
           </div>
         </section>
 
-        {/* 参数（仅作用于附加页） */}
+        {/* 重打参数 */}
         <section class="settings-grid">
           <div class="settings-card">
             <div class="settings-row">
               <label class="mini-field">
-                <span>附加页最大宽</span>
+                <span>最大宽</span>
                 <input
                   type="number"
                   min="64"
@@ -292,7 +246,7 @@ export function AtlasIncrementalView() {
                 />
               </label>
               <label class="mini-field">
-                <span>附加页最大高</span>
+                <span>最大高</span>
                 <input
                   type="number"
                   min="64"
@@ -407,31 +361,23 @@ export function AtlasIncrementalView() {
         )}
 
         {state.lastExport && (
-          <>
-            <section class="summary-banner">
-              <strong>增量完成</strong>
-              <span>
-                共 {state.lastExport.pageImagePaths.length} 页（含旧 atlas {state.lastExport.pageImagePaths.length - (state.lastExport.patchImagePath ? 1 : 0)} 张 + 附加页 {state.lastExport.patchImagePath ? "1" : "0"} 张） ·{" "}
-                {state.lastExport.metadataPaths.length} 份元数据
-              </span>
-              <span class="summary-spacer" />
-              <button
-                class="ghost-button"
-                onClick={() => {
-                  const first =
-                    state.lastExport?.patchImagePath ||
-                    state.lastExport?.pageImagePaths[0];
-                  if (first) void window.simpleImage.core.fs.revealInFolder(first);
-                }}
-              >
-                在 Finder 中显示
-              </button>
-            </section>
-            <span class="param-hint" style={{ paddingLeft: "16px" }}>
-              注意：增量打包采用"双层 atlas"策略 — 旧 atlas 保留不动（修改/删除的子图像素仍在），
-              新增/修改的子图打到附加页。新 metadata 同时引用两张图，给引擎用时一起 load。
+          <section class="summary-banner">
+            <strong>新图集已生成</strong>
+            <span>
+              {state.lastExport.pageImagePaths.length} 张 atlas ·{" "}
+              {state.lastExport.metadataPaths.length} 份元数据
             </span>
-          </>
+            <span class="summary-spacer" />
+            <button
+              class="ghost-button"
+              onClick={() => {
+                const first = state.lastExport?.pageImagePaths[0];
+                if (first) void window.simpleImage.core.fs.revealInFolder(first);
+              }}
+            >
+              在 Finder 中显示
+            </button>
+          </section>
         )}
       </div>
     </section>

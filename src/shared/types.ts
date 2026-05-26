@@ -177,19 +177,15 @@ export type AtlasIncrementalDiff = {
   unchanged: string[];    // 内容相同的 name
 };
 
-// 两种"旧版本"输入二选一：
-//   A) manifestPath：精确模式，能区分 unchanged / modified
-//   B) atlasPath + metadataPath：fallback 模式，所有同名都当 modified
+// merge 模式：旧 atlas + 旧元数据 + 新散图 → 拆 → 合 → 全量重打
 export type AtlasIncrementalPayload = {
-  manifestPath?: string;
-  atlasPath?: string;
-  metadataPath?: string;
-
-  newSourcePaths: string[]; // 新一批源图（即将作为新 atlas 内容）
+  atlasPath: string;
+  metadataPath: string;
+  newSourcePaths: string[]; // 要新增/修改的散图（不要求完整集合）
   outputDir: string;
-  outputName: string;       // 输出文件名前缀
+  outputName: string;
   format: AtlasMetadataFormat;
-  // 增量打包用的参数（仅作用于附加页）
+  // 全量重打参数
   maxWidth: number;
   maxHeight: number;
   padding: number;
@@ -199,17 +195,16 @@ export type AtlasIncrementalPayload = {
 };
 
 export type AtlasIncrementalInspectPayload = {
-  manifestPath?: string;
-  atlasPath?: string;
-  metadataPath?: string;
+  atlasPath: string;
+  metadataPath: string;
   newSourcePaths: string[];
 };
 
 export type AtlasIncrementalResult = {
   diff: AtlasIncrementalDiff;
-  patchImagePath: string | null;   // 新增的附加页 PNG 路径（无变化时为 null）
-  pageImagePaths: string[];        // 最终所有页（原 atlas + 附加页）
+  patchImagePath: string | null;   // merge 模式恒为 null（保留字段做未来扩展）
+  pageImagePaths: string[];        // 新生成的 atlas 页（一张或多张）
   metadataPaths: string[];
-  manifestPath: string;            // 新写出的 manifest
-  fellBackToFullRepack: boolean;   // 附加页装不下时是否退化为全量重打（暂未启用）
+  manifestPath: string | null;     // atlas-pack 顺手写出的新 manifest
+  fellBackToFullRepack: boolean;   // merge 模式恒为 false（保留字段做未来扩展）
 };

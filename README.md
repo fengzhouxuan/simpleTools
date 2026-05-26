@@ -35,7 +35,7 @@ SimpleImageCompress 当前是一个纯本地的桌面图片压缩工具原型，
 - 压缩结果列表显示前后大小对比、打开文件、Finder 显示、失败重试
 - 图集打包（MaxRects 算法）：实时预览、参数面板、4 种元数据格式（Cocos2d-x plist / TexturePacker JSON Hash / JSON Array / CSS Sprite）、支持 trim / rotate / POT / 多页输出
 - 图集拆分：解析 plist / JSON / CSS 元数据，把图集还原为单图，支持 trim/rotate 还原
-- 图集增量打包：按 manifest 检测差异（新增/修改/删除/复用），未变子图保留原坐标，变化的打包到附加页 — 适合做图集 patch
+- 图集增量打包（merge 模式）：拆开旧图集 + 合并新散图（新散图按文件名覆盖同名旧子图） → 全量重打成一张新图集，输入只要旧 atlas + 旧元数据 + 想加/改的散图
 
 ## 环境要求
 

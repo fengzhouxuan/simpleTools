@@ -257,13 +257,13 @@ npm run dist:mac
   - `unpackAtlas()` 用 `sharp(atlasBuffer).extract()` 切矩形 → `rotate(-90)` 还原 rotate → 可选 composite 到 sourceSize 还原 trim → 写 PNG
 
 - [electron/tools/atlas-incremental.cjs](/Users/wepie/Documents/Github/SimpleImage/electron/tools/atlas-incremental.cjs)
-  图集增量打包，依赖 atlas-pack 顺手写出的 `*.manifest.json`（含每个子图的 sha1）：
-  - 支持两种"旧版输入"模式：
-    - **精确模式**：用 `manifestPath`，能区分 unchanged / modified
-    - **fallback 模式**：用 `atlasPath + metadataPath`，调 atlas-unpack 的 `parseMetadata` 构造伪 manifest（hash 留空），所有同名子图都视为 modified
-  - `diffSources()` 按 name 匹配；旧 hash 不存在或不一致 → modified
-  - `exportIncremental()` 走"双层 atlas"策略：旧 atlas 直接复制（不改像素），added + modified 用 MaxRects 打到附加页（`-patch-N.png`），新 manifest 中 unchanged 保留原坐标、变化的指向附加页
-  - 这种策略修改/删除的旧像素仍残留在原 atlas，多次增量后会累积"垃圾"，需要偶尔走一次全量重打回收
+  图集增量打包（merge 模式）：
+  - 输入：旧 atlas 图片 + 旧元数据（plist/json/css）+ 想加/改的散图
+  - `loadOldFrames()` 调 atlas-unpack 的 parseMetadata 拿旧 frame 列表
+  - `extractOldFramesToTmpDir()` 用 `sharp.extract` 把每个旧 frame 切出到 `os.tmpdir()` 下的随机临时目录，rotated 的反向 -90° 还原；trim 不还原（buffer 本身就是子图实际内容）
+  - `exportIncremental()` 合并旧子图（临时文件路径）+ 新散图（按 basename 去重，新散图覆盖同名）→ 喂给 `atlas-pack.exportAtlas` 全量重打 → 完成后 `fs.rm(tmpDir, recursive)` 清理临时目录
+  - 输出：单张完整新 atlas + 新元数据 + 新 manifest（atlas-pack 的副产物）
+  - diff 语义：added = 新散图里没有同名旧 frame 的；modified = 新散图覆盖了同名旧 frame 的；unchanged = 旧 frame 名没被新散图覆盖的（这些会从旧 atlas 拆出来继续用）。merge 模式不支持显式"删除"。
 
 ### 6.2 预加载层
 
