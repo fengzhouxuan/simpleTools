@@ -102,6 +102,7 @@ npm run dist:mac
 
 ## 文档索引
 
+- [docs/USAGE.md](/Users/wepie/Documents/Github/SimpleImage/docs/USAGE.md): 用户使用指南，每个工具的典型流程 / 参数含义 / 常见坑
 - [docs/DEVELOPMENT.md](/Users/wepie/Documents/Github/SimpleImage/docs/DEVELOPMENT.md): 开发交接文档，包含架构、关键模块、数据流、已知限制、后续建议
 
 ## 当前优先事项

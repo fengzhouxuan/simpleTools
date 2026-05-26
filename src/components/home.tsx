@@ -73,6 +73,20 @@ const WORKFLOWS: { title: string; steps: { tool: ToolKey; text: string }[] }[] =
       { tool: "image-diff", text: "选两张图 → 像素级 diff + 差异指标，看压缩损失或还原一致性" },
     ],
   },
+  {
+    title: "整理外包/多来源素材",
+    steps: [
+      { tool: "batch-rename", text: "先用规则统一文件名（前缀+序号+正则替换）" },
+      { tool: "compress", text: "再压缩到目标体积或质量" },
+      { tool: "atlas-pack", text: "需要的话最后打包成 atlas" },
+    ],
+  },
+  {
+    title: "生成应用图标",
+    steps: [
+      { tool: "icon-gen", text: "一张大图 → macOS .icns / Windows .ico / Web favicon / PWA 全套" },
+    ],
+  },
 ];
 
 const APP_VERSION = "0.1.0";
