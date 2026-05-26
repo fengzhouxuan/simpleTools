@@ -12,6 +12,7 @@ import type {
   AtlasIncrementalDiff,
   AtlasIncrementalResult,
   AtlasMetadataFormat,
+  AtlasPackResult,
   InputFile,
 } from "../../shared/types";
 
@@ -36,8 +37,9 @@ export type AtlasIncrementalState = {
   trim: boolean;
 
   diff: AtlasIncrementalDiff | null;
+  packResult: AtlasPackResult | null;
   manifestInfo: { format: string; total: number } | null;
-  inspecting: boolean;
+  previewing: boolean;
   exporting: boolean;
   lastError: string;
   lastExport: AtlasIncrementalResult | null;
@@ -57,8 +59,9 @@ const initialState: AtlasIncrementalState = {
   pot: false,
   trim: true,
   diff: null,
+  packResult: null,
   manifestInfo: null,
-  inspecting: false,
+  previewing: false,
   exporting: false,
   lastError: "",
   lastExport: null,
@@ -121,44 +124,72 @@ export function AtlasIncrementalProvider({ children }: { children: ComponentChil
 
   const clearSession = useCallback(() => dispatch({ type: "clear" }), []);
 
-  // atlas + metadata 都齐时 inspect（即使没新源也跑，让用户能看到"全复用 0 新增 0 修改"）
+  // 输入齐 / 参数变化时触发 preview（带 300ms 防抖）
+  // 主进程对"拆图"有缓存，参数变化只重跑 pack 不重新拆图
   useEffect(() => {
     if (!state.atlasPath || !state.metadataPath) {
-      if (state.diff !== null) dispatch({ type: "patch", payload: { diff: null } });
+      if (state.diff !== null || state.packResult !== null) {
+        dispatch({ type: "patch", payload: { diff: null, packResult: null } });
+      }
       return;
     }
     let cancelled = false;
-    dispatch({ type: "patch", payload: { inspecting: true, lastError: "" } });
-    window.simpleImage.tools.atlasIncremental
-      .inspect({
-        atlasPath: state.atlasPath,
-        metadataPath: state.metadataPath,
-        newSourcePaths: state.newSources.map((s) => s.path),
-      })
-      .then(({ diff, manifest }) => {
-        if (!cancelled) {
-          dispatch({
-            type: "patch",
-            payload: { diff, manifestInfo: manifest, inspecting: false },
-          });
-        }
-      })
-      .catch((e) => {
-        if (!cancelled) {
-          dispatch({
-            type: "patch",
-            payload: {
-              inspecting: false,
-              diff: null,
-              lastError: e instanceof Error ? e.message : String(e),
-            },
-          });
-        }
-      });
+    dispatch({ type: "patch", payload: { previewing: true, lastError: "" } });
+    const timer = window.setTimeout(() => {
+      window.simpleImage.tools.atlasIncremental
+        .preview({
+          atlasPath: state.atlasPath,
+          metadataPath: state.metadataPath,
+          newSourcePaths: state.newSources.map((s) => s.path),
+          maxWidth: state.maxWidth,
+          maxHeight: state.maxHeight,
+          padding: state.padding,
+          allowRotate: state.allowRotate,
+          pot: state.pot,
+          trim: state.trim,
+        })
+        .then(({ diff, packResult, manifest }) => {
+          if (!cancelled) {
+            dispatch({
+              type: "patch",
+              payload: {
+                diff,
+                packResult,
+                manifestInfo: manifest,
+                previewing: false,
+              },
+            });
+          }
+        })
+        .catch((e) => {
+          if (!cancelled) {
+            dispatch({
+              type: "patch",
+              payload: {
+                previewing: false,
+                diff: null,
+                packResult: null,
+                lastError: e instanceof Error ? e.message : String(e),
+              },
+            });
+          }
+        });
+    }, 300);
     return () => {
       cancelled = true;
+      window.clearTimeout(timer);
     };
-  }, [state.atlasPath, state.metadataPath, state.newSources]);
+  }, [
+    state.atlasPath,
+    state.metadataPath,
+    state.newSources,
+    state.maxWidth,
+    state.maxHeight,
+    state.padding,
+    state.allowRotate,
+    state.pot,
+    state.trim,
+  ]);
 
   const runExport = useCallback(async () => {
     const c = stateRef.current;

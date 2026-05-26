@@ -10,11 +10,9 @@ const atlasUnpack = require("./atlas-unpack.cjs");
 // ============================================================
 // 用户输入：旧 atlas 图片 + 旧元数据 + 新散图
 // 工具流程：
-//   1. 解析旧元数据 → 拿到所有旧 frame 在 atlas 中的位置
-//   2. 用 sharp.extract 把每个旧 frame 切出到临时目录（按 frame.name 命名）
-//   3. 把新散图加进来 — 按文件名 basename 去重，新散图优先（覆盖同名）
-//   4. 用 atlas-pack 的 exportAtlas 全量重打
-//   5. 清理临时目录
+//   1. 拆旧 atlas 到临时目录（带缓存，同一对 atlas+metadata 只拆一次）
+//   2. 合并：未被新散图覆盖的旧子图 + 全部新散图
+//   3. 用 atlas-pack.exportAtlas 全量重打
 // 输出：单张完整新 atlas + 元数据，子图坐标全新
 
 // ============================================================
@@ -29,7 +27,7 @@ async function loadOldFrames(atlasPath, metadataPath) {
 }
 
 // ============================================================
-// 2) 从旧 atlas 切出每个 frame 到临时目录
+// 2) 拆图到临时目录（核心）
 // ============================================================
 
 async function extractOldFramesToTmpDir(atlasPath, frames, tmpDir) {
@@ -43,12 +41,9 @@ async function extractOldFramesToTmpDir(atlasPath, frames, tmpDir) {
         width: frame.width,
         height: frame.height,
       });
-      // 还原 rotate：打包时 90° 顺时针 → 这里 -90° 还原
       if (frame.rotated) {
         pipeline = pipeline.rotate(-90);
       }
-      // 不还原 trim：buffer 就是子图实际内容，下一轮 pack 再 trim 也无可去边
-      // 名字保留原 frame.name（可能含子目录，例如 "ui/btn.png"）
       const cleanName = frame.name.replace(/\.\./g, "_").replace(/^\/+/, "");
       const outPath = path.join(tmpDir, cleanName);
       await fs.mkdir(path.dirname(outPath), { recursive: true });
@@ -62,36 +57,112 @@ async function extractOldFramesToTmpDir(atlasPath, frames, tmpDir) {
 }
 
 // ============================================================
-// 3) inspect: 算 diff（merge 语义）
+// 3) 拆图单项缓存：避免参数变化时重复拆
+// ============================================================
+// 切换 atlas/metadata → 清旧 cache、重新拆
+// 同一对 atlas+metadata → 直接复用，预览/导出共享
+
+let extractCache = null; // { key, tmpDir, extracted, oldFrames, format }
+
+async function clearCache() {
+  if (extractCache) {
+    const oldTmp = extractCache.tmpDir;
+    extractCache = null;
+    fs.rm(oldTmp, { recursive: true, force: true }).catch((e) => {
+      console.error(`[atlas-incremental] cleanup ${oldTmp} failed:`, e.message);
+    });
+  }
+}
+
+async function getOrExtract(atlasPath, metadataPath) {
+  const key = `${atlasPath}|${metadataPath}`;
+  if (extractCache && extractCache.key === key) {
+    return extractCache;
+  }
+  if (extractCache) {
+    await clearCache();
+  }
+  const { format, frames } = await loadOldFrames(atlasPath, metadataPath);
+  const tmpDir = await fs.mkdtemp(
+    path.join(os.tmpdir(), "simpleimage-atlas-merge-"),
+  );
+  console.log(`[atlas-incremental] tmp dir: ${tmpDir}`);
+  const startedAt = Date.now();
+  const extracted = await extractOldFramesToTmpDir(atlasPath, frames, tmpDir);
+  console.log(
+    `[atlas-incremental] extracted ${extracted.length} frames in ${Date.now() - startedAt}ms`,
+  );
+  extractCache = { key, tmpDir, extracted, oldFrames: frames, format };
+  return extractCache;
+}
+
+// ============================================================
+// 4) 合并旧子图 + 新散图（新散图覆盖同名）
 // ============================================================
 
-async function inspectIncremental(payload) {
-  if (!payload.atlasPath || !payload.metadataPath) {
-    throw new Error("需要同时选择旧 atlas 图片和旧元数据文件");
+function mergeInputs(extracted, newSourcePaths) {
+  const newSourceByName = new Map(
+    (newSourcePaths || []).map((p) => [path.basename(p), p]),
+  );
+  const merged = [];
+  for (const old of extracted) {
+    if (!newSourceByName.has(old.name)) {
+      merged.push({ path: old.path, name: old.name });
+    }
   }
-  const { format, frames: oldFrames } = await loadOldFrames(
+  for (const newPath of newSourcePaths || []) {
+    merged.push({ path: newPath, name: path.basename(newPath) });
+  }
+  return merged;
+}
+
+function computeDiff(oldFrames, newSourcePaths) {
+  const oldNames = new Set(oldFrames.map((f) => f.name));
+  const newNames = (newSourcePaths || []).map((p) => path.basename(p));
+  const modified = newNames.filter((n) => oldNames.has(n));
+  const added = newNames.filter((n) => !oldNames.has(n));
+  const unchanged = [...oldNames].filter((n) => !newNames.includes(n));
+  return { added, modified, removed: [], unchanged };
+}
+
+// ============================================================
+// 5) preview: 算坐标 + diff，不写盘
+// ============================================================
+
+async function previewIncremental(payload) {
+  if (!payload.atlasPath || !payload.metadataPath) {
+    return {
+      diff: { added: [], modified: [], removed: [], unchanged: [] },
+      packResult: { pages: [], totalUtilization: 0 },
+      manifest: null,
+    };
+  }
+
+  const { extracted, oldFrames, format } = await getOrExtract(
     payload.atlasPath,
     payload.metadataPath,
   );
-  const oldNames = new Set(oldFrames.map((f) => f.name));
-  const newNames = (payload.newSourcePaths || []).map((p) => path.basename(p));
-
-  const modified = [];
-  const added = [];
-  for (const n of newNames) {
-    if (oldNames.has(n)) modified.push(n);
-    else added.push(n);
-  }
-  const unchanged = [...oldNames].filter((n) => !newNames.includes(n));
+  const merged = mergeInputs(extracted, payload.newSourcePaths);
+  const packResult = await atlasPack.packAtlas({
+    inputs: merged,
+    maxWidth: payload.maxWidth,
+    maxHeight: payload.maxHeight,
+    padding: payload.padding,
+    allowRotate: payload.allowRotate,
+    pot: payload.pot,
+    trim: payload.trim,
+  });
+  const diff = computeDiff(oldFrames, payload.newSourcePaths);
 
   return {
-    diff: { added, modified, removed: [], unchanged },
-    manifest: { format, total: oldFrames.length, fallback: false },
+    diff,
+    packResult,
+    manifest: { format, total: oldFrames.length },
   };
 }
 
 // ============================================================
-// 4) export: merge + 全量重打
+// 6) export: 全量重打 + 写盘（复用 cache）
 // ============================================================
 
 async function exportIncremental(payload) {
@@ -99,104 +170,52 @@ async function exportIncremental(payload) {
     throw new Error("需要同时选择旧 atlas 图片和旧元数据文件");
   }
 
-  const { frames: oldFrames } = await loadOldFrames(
+  const { extracted, oldFrames } = await getOrExtract(
     payload.atlasPath,
     payload.metadataPath,
   );
+  const merged = mergeInputs(extracted, payload.newSourcePaths);
 
-  const tmpDir = await fs.mkdtemp(
-    path.join(os.tmpdir(), "simpleimage-atlas-merge-"),
-  );
-  console.log(`[atlas-incremental] tmp dir: ${tmpDir}`);
+  const packed = await atlasPack.exportAtlas({
+    inputs: merged,
+    maxWidth: payload.maxWidth,
+    maxHeight: payload.maxHeight,
+    padding: payload.padding,
+    allowRotate: payload.allowRotate,
+    pot: payload.pot,
+    trim: payload.trim,
+    outputDir: payload.outputDir,
+    outputName: payload.outputName,
+    format: payload.format,
+  });
 
-  try {
-    // 1. 拆旧 atlas 到临时目录
-    const startedAt = Date.now();
-    const oldExtracted = await extractOldFramesToTmpDir(
-      payload.atlasPath,
-      oldFrames,
-      tmpDir,
-    );
-    console.log(
-      `[atlas-incremental] extracted ${oldExtracted.length} old frames in ${Date.now() - startedAt}ms`,
-    );
-
-    // 2. 合并：新散图覆盖同名旧子图
-    const newSourceByName = new Map(
-      (payload.newSourcePaths || []).map((p) => [path.basename(p), p]),
-    );
-    const mergedInputs = [];
-    // 未被新散图覆盖的旧子图
-    for (const old of oldExtracted) {
-      if (!newSourceByName.has(old.name)) {
-        mergedInputs.push({ path: old.path, name: old.name });
-      }
-    }
-    // 加入全部新散图
-    for (const newPath of payload.newSourcePaths || []) {
-      mergedInputs.push({ path: newPath, name: path.basename(newPath) });
-    }
-
-    console.log(
-      `[atlas-incremental] merging ${oldExtracted.length} old + ${
-        (payload.newSourcePaths || []).length
-      } new → ${mergedInputs.length} inputs`,
-    );
-
-    // 3. 全量重打（复用 atlas-pack）
-    const packed = await atlasPack.exportAtlas({
-      inputs: mergedInputs,
-      maxWidth: payload.maxWidth,
-      maxHeight: payload.maxHeight,
-      padding: payload.padding,
-      allowRotate: payload.allowRotate,
-      pot: payload.pot,
-      trim: payload.trim,
-      outputDir: payload.outputDir,
-      outputName: payload.outputName,
-      format: payload.format,
-    });
-
-    // 4. 算出 diff 给前端展示
-    const oldNames = new Set(oldFrames.map((f) => f.name));
-    const newNames = (payload.newSourcePaths || []).map((p) => path.basename(p));
-    const modified = newNames.filter((n) => oldNames.has(n));
-    const added = newNames.filter((n) => !oldNames.has(n));
-    const unchanged = [...oldNames].filter((n) => !newNames.includes(n));
-
-    return {
-      diff: { added, modified, removed: [], unchanged },
-      patchImagePath: null,                   // merge 模式没有 patch 概念
-      pageImagePaths: packed.pageImagePaths,
-      metadataPaths: packed.metadataPaths,
-      manifestPath: packed.manifestPath,
-      fellBackToFullRepack: false,
-    };
-  } finally {
-    // 5. 清理临时目录
-    try {
-      await fs.rm(tmpDir, { recursive: true, force: true });
-    } catch (e) {
-      console.error(`[atlas-incremental] cleanup tmp failed:`, e.message);
-    }
-  }
+  return {
+    diff: computeDiff(oldFrames, payload.newSourcePaths),
+    patchImagePath: null,
+    pageImagePaths: packed.pageImagePaths,
+    metadataPaths: packed.metadataPaths,
+    manifestPath: packed.manifestPath,
+    fellBackToFullRepack: false,
+  };
 }
 
 // ============================================================
-// 5) IPC
+// 7) IPC
 // ============================================================
 
 function register(ipcMain) {
-  ipcMain.handle("tools:atlas-incremental:inspect", (_e, payload) =>
-    inspectIncremental(payload),
+  ipcMain.handle("tools:atlas-incremental:preview", (_e, payload) =>
+    previewIncremental(payload),
   );
   ipcMain.handle("tools:atlas-incremental:export", (_e, payload) =>
     exportIncremental(payload),
   );
+  ipcMain.handle("tools:atlas-incremental:clear-cache", () => clearCache());
 }
 
 module.exports = {
-  inspectIncremental,
+  previewIncremental,
   exportIncremental,
+  clearCache,
   register,
 };

@@ -14,6 +14,12 @@ import type {
   InputFile,
 } from "./types";
 
+type AtlasIncrementalPreviewResult = {
+  diff: AtlasIncrementalDiff;
+  packResult: AtlasPackResult;
+  manifest: { format: string; total: number } | null;
+};
+
 declare global {
   interface Window {
     simpleImage: {
@@ -50,17 +56,21 @@ declare global {
           export: (payload: AtlasUnpackPayload) => Promise<AtlasUnpackResult>;
         };
         atlasIncremental: {
-          inspect: (payload: {
+          preview: (payload: {
             atlasPath: string;
             metadataPath: string;
             newSourcePaths: string[];
-          }) => Promise<{
-            diff: AtlasIncrementalDiff;
-            manifest: { format: string; total: number };
-          }>;
+            maxWidth: number;
+            maxHeight: number;
+            padding: number;
+            allowRotate: boolean;
+            pot: boolean;
+            trim: boolean;
+          }) => Promise<AtlasIncrementalPreviewResult>;
           export: (
             payload: AtlasIncrementalPayload,
           ) => Promise<AtlasIncrementalResult>;
+          clearCache: () => Promise<void>;
         };
       };
     };

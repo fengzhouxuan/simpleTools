@@ -29,8 +29,9 @@ contextBridge.exposeInMainWorld("simpleImage", {
       export: (payload) => ipcRenderer.invoke("tools:atlas-unpack:export", payload),
     },
     atlasIncremental: {
-      inspect: (payload) => ipcRenderer.invoke("tools:atlas-incremental:inspect", payload),
+      preview: (payload) => ipcRenderer.invoke("tools:atlas-incremental:preview", payload),
       export: (payload) => ipcRenderer.invoke("tools:atlas-incremental:export", payload),
+      clearCache: () => ipcRenderer.invoke("tools:atlas-incremental:clear-cache"),
     },
   },
 });

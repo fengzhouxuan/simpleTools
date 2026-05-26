@@ -3,6 +3,7 @@ import {
   guessAtlasForMetadata,
   guessMetadataForAtlas,
 } from "../../shared/sibling-guess";
+import { AtlasPreview } from "../atlas-pack/preview";
 import { useAtlasIncremental } from "./state";
 
 function basename(p: string): string {
@@ -20,7 +21,7 @@ const FORMAT_LABELS: Record<string, string> = {
 
 export function AtlasIncrementalView() {
   const { state, patch, importSources, clearSession, runExport } = useAtlasIncremental();
-  const { diff, manifestInfo } = state;
+  const { diff, manifestInfo, packResult } = state;
   const hasSources = state.newSources.length > 0;
   const isEmpty = !hasSources;
 
@@ -71,9 +72,13 @@ export function AtlasIncrementalView() {
   const canExport = oldLoaded && !!state.outputDir && !!diff && !state.exporting;
 
   const summary = diff
-    ? `+${diff.added.length} 改${diff.modified.length} 复用${diff.unchanged.length}`
-    : state.inspecting
-      ? "解析中..."
+    ? `+${diff.added.length} 改${diff.modified.length} 复用${diff.unchanged.length}${
+        packResult && packResult.pages.length > 0
+          ? ` · 预计 ${packResult.pages.length} 页 · 利用率 ${(packResult.totalUtilization * 100).toFixed(1)}%`
+          : ""
+      }`
+    : state.previewing
+      ? "计算中..."
       : "选择旧图集与新散图";
 
   return (
@@ -123,8 +128,8 @@ export function AtlasIncrementalView() {
                   ✓ {FORMAT_LABELS[manifestInfo.format] || manifestInfo.format} ·{" "}
                   {manifestInfo.total} 个旧子图
                 </span>
-              ) : state.inspecting ? (
-                <span class="param-hint">解析中...</span>
+              ) : state.previewing ? (
+                <span class="param-hint">计算中...</span>
               ) : state.atlasPath && !state.metadataPath ? (
                 <span class="param-hint" style={{ color: "var(--accent)" }}>
                   ⚠ 还需要选元数据文件
@@ -151,22 +156,27 @@ export function AtlasIncrementalView() {
           </div>
         </section>
 
-        {/* 新散图导入区 */}
-        <section class="stage-panel" style={{ minHeight: isEmpty ? "180px" : "240px" }}>
-          <FileImportZone
-            empty={isEmpty}
-            emptyTitle="拖入要新增 / 替换的散图"
-            emptyDefaultHint="工具会把旧 atlas 拆开 → 跟这些散图合并 → 全量重打一张新 atlas"
-            onPathsDropped={(paths) => void handlePathsDropped(paths)}
-          >
-            <div class="atlas-input-list">
-              {state.newSources.map((it) => (
-                <div key={it.path} class="atlas-input-row" title={it.path}>
-                  <span class="atlas-input-name">{it.name}</span>
-                </div>
-              ))}
-            </div>
-          </FileImportZone>
+        {/* 左右双栏：左 = 新散图列表，右 = 预览 canvas */}
+        <section class="atlas-stage">
+          <div class="atlas-stage-left">
+            <FileImportZone
+              empty={isEmpty}
+              emptyTitle="拖入要新增 / 替换的散图"
+              emptyDefaultHint="工具会把旧 atlas 拆开 → 跟这些散图合并 → 全量重打一张新 atlas"
+              onPathsDropped={(paths) => void handlePathsDropped(paths)}
+            >
+              <div class="atlas-input-list">
+                {state.newSources.map((it) => (
+                  <div key={it.path} class="atlas-input-row" title={it.path}>
+                    <span class="atlas-input-name">{it.name}</span>
+                  </div>
+                ))}
+              </div>
+            </FileImportZone>
+          </div>
+          <div class="atlas-stage-right">
+            <AtlasPreview result={packResult} />
+          </div>
         </section>
 
         {/* 差异面板：3 个 chip，无"删除" */}
