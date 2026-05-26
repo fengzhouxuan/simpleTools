@@ -125,6 +125,15 @@ async function pickFolder() {
   return result.filePaths[0];
 }
 
+async function pickSingleFile(filters) {
+  const result = await dialog.showOpenDialog({
+    properties: ["openFile"],
+    filters: Array.isArray(filters) && filters.length > 0 ? filters : undefined,
+  });
+  if (result.canceled || result.filePaths.length === 0) return null;
+  return result.filePaths[0];
+}
+
 async function scanDirectory(dirPath) {
   return collectFromDirectory(dirPath);
 }
@@ -143,6 +152,7 @@ function revealInFolder(filePath) {
 function register(ipcMain) {
   ipcMain.handle("core:fs:pick-files", () => pickFiles());
   ipcMain.handle("core:fs:pick-folder", () => pickFolder());
+  ipcMain.handle("core:fs:pick-single-file", (_e, filters) => pickSingleFile(filters));
   ipcMain.handle("core:fs:scan-directory", (_event, dirPath) => scanDirectory(dirPath));
   ipcMain.handle("core:fs:normalize-paths", (_event, paths) => normalizePaths(paths));
   ipcMain.handle("core:fs:open-path", (_event, filePath) => openPath(filePath));
@@ -159,6 +169,7 @@ module.exports = {
   resolveOutputPath,
   pickFiles,
   pickFolder,
+  pickSingleFile,
   scanDirectory,
   openPath,
   revealInFolder,

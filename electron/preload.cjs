@@ -5,6 +5,7 @@ contextBridge.exposeInMainWorld("simpleImage", {
     fs: {
       pickFiles: () => ipcRenderer.invoke("core:fs:pick-files"),
       pickFolder: () => ipcRenderer.invoke("core:fs:pick-folder"),
+      pickSingleFile: (filters) => ipcRenderer.invoke("core:fs:pick-single-file", filters),
       scanDirectory: (dirPath) => ipcRenderer.invoke("core:fs:scan-directory", dirPath),
       normalizePaths: (paths) => ipcRenderer.invoke("core:fs:normalize-paths", paths),
       openPath: (filePath) => ipcRenderer.invoke("core:fs:open-path", filePath),
@@ -21,6 +22,10 @@ contextBridge.exposeInMainWorld("simpleImage", {
     atlasPack: {
       pack: (payload) => ipcRenderer.invoke("tools:atlas-pack:pack", payload),
       export: (payload) => ipcRenderer.invoke("tools:atlas-pack:export", payload),
+    },
+    atlasUnpack: {
+      inspect: (payload) => ipcRenderer.invoke("tools:atlas-unpack:inspect", payload),
+      export: (payload) => ipcRenderer.invoke("tools:atlas-unpack:export", payload),
     },
   },
 });

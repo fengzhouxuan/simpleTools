@@ -2,6 +2,7 @@ import { useEffect } from "preact/hooks";
 import { NavigationProvider } from "./state/navigation";
 import { CompressProvider } from "./tools/compress/state";
 import { AtlasPackProvider } from "./tools/atlas-pack/state";
+import { AtlasUnpackProvider } from "./tools/atlas-unpack/state";
 import { ToolNav } from "./components/tool-nav";
 import { Workspace } from "./components/workspace";
 
@@ -20,6 +21,7 @@ export function App() {
     <NavigationProvider>
       <CompressProvider>
         <AtlasPackProvider>
+        <AtlasUnpackProvider>
         <main class="tuya-shell">
           <header class="tuya-titlebar">
             <strong>SimpleImageCompress</strong>
@@ -31,6 +33,7 @@ export function App() {
             </section>
           </div>
         </main>
+        </AtlasUnpackProvider>
         </AtlasPackProvider>
       </CompressProvider>
     </NavigationProvider>

@@ -250,6 +250,12 @@ npm run dist:mac
   - `composePageImage()` 用 sharp.composite 合成一页 PNG（trim 后 buffer + rotate 90°）
   - `serializeMetadata()` 输出 4 种格式：Cocos2d-x plist / TexturePacker JSON Hash / JSON Array / CSS Sprite，字段命名（frame / rotated / trimmed / spriteSourceSize / sourceSize）对齐 TexturePacker 标准
 
+- [electron/tools/atlas-unpack.cjs](/Users/wepie/Documents/Github/SimpleImage/electron/tools/atlas-unpack.cjs)
+  图集拆分工具，注册两条 IPC：`tools:atlas-unpack:inspect`（只解析元数据返回 frame 列表）+ `tools:atlas-unpack:export`（实际切分写盘）：
+  - `detectFormat()` 按扩展名 + 文件首字符判断格式
+  - `parseMetadata()` 4 种格式各自解析为统一的 `ParsedAtlasFrame[]`（plist 用正则；JSON 直接 parse；CSS 正则识别 `.sprite-xxx` 规则）
+  - `unpackAtlas()` 用 `sharp(atlasBuffer).extract()` 切矩形 → `rotate(-90)` 还原 rotate → 可选 composite 到 sourceSize 还原 trim → 写 PNG
+
 ### 6.2 预加载层
 
 文件：[electron/preload.cjs](/Users/wepie/Documents/Github/SimpleImage/electron/preload.cjs)
@@ -261,6 +267,8 @@ npm run dist:mac
 - `tools.compress.run(payload)` — 跑批压缩
 - `tools.atlasPack.pack(options)` — 图集打包仅计算坐标（用于预览）
 - `tools.atlasPack.export(payload)` — 图集打包并写文件
+- `tools.atlasUnpack.inspect(payload)` — 解析图集元数据返回 frame 列表
+- `tools.atlasUnpack.export(payload)` — 拆分图集并写出各子图
 
 新增工具的能力时遵循这条链路：
 

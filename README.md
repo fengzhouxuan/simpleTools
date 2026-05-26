@@ -34,6 +34,7 @@ SimpleImageCompress 当前是一个纯本地的桌面图片压缩工具原型，
 - GIF/SVG 兼容性预防提示（选错输出格式即时告警 + 一键修复）
 - 压缩结果列表显示前后大小对比、打开文件、Finder 显示、失败重试
 - 图集打包（MaxRects 算法）：实时预览、参数面板、4 种元数据格式（Cocos2d-x plist / TexturePacker JSON Hash / JSON Array / CSS Sprite）、支持 trim / rotate / POT / 多页输出
+- 图集拆分：解析 plist / JSON / CSS 元数据，把图集还原为单图，支持 trim/rotate 还原
 
 ## 环境要求
 
@@ -97,12 +98,11 @@ npm run dist:mac
 
 ## 当前优先事项
 
-压缩与图集打包两个模块已完成 MVP。剩余优先事项：
+压缩、图集打包、图集拆分三个模块已完成 MVP。剩余优先事项：
 
 1. 图集增量打包（变更资源的增量更新）
-2. 图集拆分（已有图集恢复为单图）
-3. 接入 notarization 和正式发布流程
-4. 大文件/长任务的流式进度反馈（目前 archive 预设下 1MB GIF 约 3 秒，更大文件/批量打包暂时只有整体 loading）
+2. 接入 notarization 和正式发布流程
+3. 大文件/长任务的流式进度反馈（目前批量任务只有整体 loading）
 
 ## 中长期方向
 

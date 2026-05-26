@@ -104,3 +104,39 @@ export type AtlasExportResult = {
   pageImagePaths: string[];    // 写入的 PNG 路径
   metadataPaths: string[];     // 写入的元数据路径
 };
+
+// ===== atlas-unpack =====
+
+// 元数据解析后的统一 frame 表示（无论源是 plist / json / css）
+export type ParsedAtlasFrame = {
+  name: string;          // 子图文件名（含扩展名，如 hero.png）
+  x: number;             // 在 atlas 中的位置
+  y: number;
+  width: number;         // 在 atlas 中的占位尺寸（rotated 时为旋转后尺寸）
+  height: number;
+  rotated: boolean;
+  trimmed: boolean;
+  sourceWidth: number;   // 原图尺寸（trim 前）；无 trim 信息时等于 width/height
+  sourceHeight: number;
+  trimX: number;         // 内容在原图中的偏移
+  trimY: number;
+};
+
+export type AtlasInspectResult = {
+  atlasWidth: number;
+  atlasHeight: number;
+  frames: ParsedAtlasFrame[];
+  detectedFormat: AtlasMetadataFormat;
+};
+
+export type AtlasUnpackPayload = {
+  atlasPath: string;
+  metadataPath: string;
+  outputDir: string;
+  restoreOriginalSize: boolean;  // true：把 trim 过的子图扩回 sourceSize 填透明；false：只输出 trim 后的可见区
+};
+
+export type AtlasUnpackResult = {
+  outputPaths: string[];
+  skipped: { name: string; reason: string }[];
+};

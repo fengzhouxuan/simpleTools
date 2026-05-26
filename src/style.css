@@ -1226,6 +1226,22 @@ input[type="checkbox"] {
   font-size: 11px;
 }
 
+/* atlas-unpack 专用 */
+.unpack-frame-list {
+  min-height: 200px;
+  max-height: 280px;
+}
+
+.unpack-frame-meta {
+  margin-left: 8px;
+  color: var(--text-tertiary);
+  font-size: 11px;
+}
+
+.summary-spacer {
+  flex: 1;
+}
+
 /* ===== GIF/SVG 兼容性警告横幅 ===== */
 
 .compat-warning {

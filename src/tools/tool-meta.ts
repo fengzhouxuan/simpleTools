@@ -29,8 +29,8 @@ export const toolMeta: Record<ToolKey, ToolMeta> = {
   },
   "atlas-unpack": {
     label: "图集拆分",
-    status: "planned",
-    description: "将现有图集恢复为单图资源。",
+    status: "available",
+    description: "解析 plist / JSON / CSS 元数据，把图集还原为单图。",
   },
 };
 
