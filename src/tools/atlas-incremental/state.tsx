@@ -16,6 +16,7 @@ import type {
   InputFile,
   TaskProgress,
 } from "../../shared/types";
+import { useRemembered } from "../../shared/use-remembered";
 
 export type AtlasIncrementalState = {
   // 旧 atlas + 旧元数据（两个都必填）
@@ -124,6 +125,11 @@ export function AtlasIncrementalProvider({ children }: { children: ComponentChil
     });
     return unsub;
   }, []);
+
+  // 记忆输出目录
+  useRemembered("tool:atlas-incremental:outputDir", state.outputDir, (saved) => {
+    dispatch({ type: "patch", payload: { outputDir: saved } });
+  });
 
   const patch = useCallback((payload: Partial<AtlasIncrementalState>) => {
     dispatch({ type: "patch", payload });

@@ -8,6 +8,12 @@ import {
   useRef,
 } from "preact/hooks";
 import type { ComponentChildren } from "preact";
+import { useRemembered } from "../../shared/use-remembered";
+import {
+  ATLAS_PRESET_SENSITIVE_KEYS,
+  atlasPresetMap,
+  type AtlasPresetKey,
+} from "./presets";
 import type {
   AtlasExportResult,
   AtlasInput,
@@ -28,6 +34,7 @@ export type AtlasPackState = {
   format: AtlasMetadataFormat;
   outputDir: string;
   outputName: string;
+  preset: AtlasPresetKey;
   packResult: AtlasPackResult | null;
   packing: boolean;
   exporting: boolean;
@@ -47,6 +54,7 @@ const initialState: AtlasPackState = {
   format: "json-hash",
   outputDir: "",
   outputName: "atlas",
+  preset: "default",
   packResult: null,
   packing: false,
   exporting: false,
@@ -58,12 +66,22 @@ const initialState: AtlasPackState = {
 type Action =
   | { type: "patch"; payload: Partial<AtlasPackState> }
   | { type: "import"; payload: InputFile[] }
-  | { type: "clear" };
+  | { type: "clear" }
+  | { type: "apply-preset"; payload: Exclude<AtlasPresetKey, "custom"> };
+
+function patchTouchesPresetParams(payload: Partial<AtlasPackState>): boolean {
+  return ATLAS_PRESET_SENSITIVE_KEYS.some((key) => key in payload);
+}
 
 function reducer(state: AtlasPackState, action: Action): AtlasPackState {
   switch (action.type) {
-    case "patch":
+    case "patch": {
+      // 用户改任何 preset 参数 → 自动切 custom（除非显式带 preset）
+      if (patchTouchesPresetParams(action.payload) && !("preset" in action.payload)) {
+        return { ...state, ...action.payload, preset: "custom" };
+      }
       return { ...state, ...action.payload };
+    }
     case "import": {
       // 用 path 去重，保留已有，追加新增
       const map = new Map(state.inputs.map((i) => [i.path, i]));
@@ -81,6 +99,11 @@ function reducer(state: AtlasPackState, action: Action): AtlasPackState {
     }
     case "clear":
       return { ...state, inputs: [], packResult: null, lastError: "" };
+    case "apply-preset": {
+      const preset = atlasPresetMap.get(action.payload);
+      if (!preset) return state;
+      return { ...state, ...preset.params, preset: preset.key };
+    }
   }
 }
 
@@ -90,6 +113,7 @@ export type AtlasPackContextValue = {
   importInputs: (files: InputFile[]) => void;
   clearSession: () => void;
   exportAtlas: () => Promise<void>;
+  applyPreset: (key: Exclude<AtlasPresetKey, "custom">) => void;
 };
 
 const AtlasPackContext = createContext<AtlasPackContextValue | null>(null);
@@ -120,6 +144,11 @@ export function AtlasPackProvider({ children }: { children: ComponentChildren })
     });
     return unsub;
   }, []);
+
+  // 记忆输出目录
+  useRemembered("tool:atlas-pack:outputDir", state.outputDir, (saved) => {
+    dispatch({ type: "patch", payload: { outputDir: saved } });
+  });
 
   const patch = useCallback((payload: Partial<AtlasPackState>) => {
     dispatch({ type: "patch", payload });
@@ -224,9 +253,13 @@ export function AtlasPackProvider({ children }: { children: ComponentChildren })
     }
   }, []);
 
+  const applyPreset = useCallback((key: Exclude<AtlasPresetKey, "custom">) => {
+    dispatch({ type: "apply-preset", payload: key });
+  }, []);
+
   const value = useMemo<AtlasPackContextValue>(
-    () => ({ state, patch, importInputs, clearSession, exportAtlas }),
-    [state, patch, importInputs, clearSession, exportAtlas],
+    () => ({ state, patch, importInputs, clearSession, exportAtlas, applyPreset }),
+    [state, patch, importInputs, clearSession, exportAtlas, applyPreset],
   );
 
   return (

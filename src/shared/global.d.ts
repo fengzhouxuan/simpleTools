@@ -40,6 +40,10 @@ declare global {
         webUtils: {
           getPathForFile: (file: File) => string;
         };
+        settings: {
+          get: <T = unknown>(key: string, defaultValue?: T) => Promise<T>;
+          set: (key: string, value: unknown) => Promise<boolean>;
+        };
       };
       tools: {
         compress: {

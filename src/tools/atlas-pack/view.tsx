@@ -2,6 +2,7 @@ import { FileImportZone } from "../../components/file-import";
 import { ProgressBar } from "../../components/progress-bar";
 import { useAtlasPack } from "./state";
 import { AtlasPreview } from "./preview";
+import { AtlasPresetBar } from "./preset-bar";
 
 const DROP_HINT = "拖入小图（JPG / PNG / WebP）开始打包";
 
@@ -111,6 +112,8 @@ export function AtlasPackView() {
         {state.exporting && (
           <ProgressBar progress={state.progress} taskLabel="导出" />
         )}
+
+        <AtlasPresetBar />
 
         {/* 参数面板 */}
         <section class="settings-grid">

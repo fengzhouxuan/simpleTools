@@ -9,6 +9,7 @@ import {
 } from "preact/hooks";
 import type { ComponentChildren } from "preact";
 import type { AtlasInspectResult, AtlasUnpackResult } from "../../shared/types";
+import { useRemembered } from "../../shared/use-remembered";
 
 export type AtlasUnpackState = {
   atlasPath: string;
@@ -145,6 +146,11 @@ export function AtlasUnpackProvider({ children }: { children: ComponentChildren 
       });
     }
   }, []);
+
+  // 记忆输出目录
+  useRemembered("tool:atlas-unpack:outputDir", state.outputDir, (saved) => {
+    dispatch({ type: "patch", payload: { outputDir: saved } });
+  });
 
   const value = useMemo<AtlasUnpackContextValue>(
     () => ({ state, patch, clearSession, exportUnpack }),

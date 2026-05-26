@@ -15,6 +15,10 @@ contextBridge.exposeInMainWorld("simpleImage", {
     webUtils: {
       getPathForFile: (file) => webUtils.getPathForFile(file),
     },
+    settings: {
+      get: (key, defaultValue) => ipcRenderer.invoke("core:settings:get", key, defaultValue),
+      set: (key, value) => ipcRenderer.invoke("core:settings:set", key, value),
+    },
   },
   tools: {
     compress: {

@@ -18,6 +18,7 @@ import type {
   SaveMode,
   TaskProgress,
 } from "../../shared/types";
+import { useRemembered } from "../../shared/use-remembered";
 import { PRESET_SENSITIVE_KEYS, presetMap } from "./presets";
 
 export type CompressState = {
@@ -138,6 +139,11 @@ export function CompressProvider({ children }: { children: ComponentChildren }) 
     });
     return unsub;
   }, []);
+
+  // 记忆输出目录
+  useRemembered("tool:compress:outputDir", state.outputDir, (saved) => {
+    dispatch({ type: "patch", payload: { outputDir: saved } });
+  });
 
   const patch = useCallback((payload: Partial<CompressState>) => {
     dispatch({ type: "patch", payload });
