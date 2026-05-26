@@ -37,6 +37,11 @@ export const toolMeta: Record<ToolKey, ToolMeta> = {
     status: "available",
     description: "一张大图 → macOS / Windows / Web / PWA 全套图标。",
   },
+  "image-diff": {
+    label: "图片对比",
+    status: "available",
+    description: "两张图像素级比对，输出 diff 可视化与差异指标。",
+  },
 };
 
 export const navToolOrder: ToolKey[] = [
@@ -46,6 +51,7 @@ export const navToolOrder: ToolKey[] = [
   "atlas-incremental",
   "atlas-unpack",
   "icon-gen",
+  "image-diff",
 ];
 
 export const homeToolOrder: ToolKey[] = [
@@ -54,4 +60,5 @@ export const homeToolOrder: ToolKey[] = [
   "atlas-incremental",
   "atlas-unpack",
   "icon-gen",
+  "image-diff",
 ];

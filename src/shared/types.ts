@@ -4,7 +4,8 @@ export type ToolKey =
   | "atlas-pack"
   | "atlas-incremental"
   | "atlas-unpack"
-  | "icon-gen";
+  | "icon-gen"
+  | "image-diff";
 
 export type ToolStatus = "available" | "planned" | "workspace";
 
@@ -168,6 +169,33 @@ export type IconGenPayload = {
 export type IconGenResult = {
   outputPaths: string[];
   skipped: { target: string; reason: string }[];
+};
+
+// ===== image-diff =====
+
+export type ImageDiffPayload = {
+  aPath: string;
+  bPath: string;
+  threshold: number;  // 0~255，单通道差异低于此值视为"相同"，默认 5
+};
+
+export type ImageDiffStats = {
+  comparedWidth: number;
+  comparedHeight: number;
+  totalPixels: number;
+  diffPixels: number;
+  diffRatio: number;        // 0~1
+  maxDelta: number;          // 0~255 单通道最大差
+  avgDelta: number;          // 平均差
+  sizesMatch: boolean;       // 两张图原始尺寸是否一致
+  aSize: { w: number; h: number };
+  bSize: { w: number; h: number };
+};
+
+export type ImageDiffResult = {
+  stats: ImageDiffStats;
+  // diff 可视化 PNG 的 base64 data URI（不同处红色高亮，相同处保留 A 灰度）
+  diffImageDataUri: string;
 };
 
 // ===== atlas-incremental =====

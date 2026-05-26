@@ -76,5 +76,8 @@ contextBridge.exposeInMainWorld("simpleImage", {
         return () => ipcRenderer.off("tools:icon-gen:progress", wrapped);
       },
     },
+    imageDiff: {
+      run: (payload) => ipcRenderer.invoke("tools:image-diff:run", payload),
+    },
   },
 });

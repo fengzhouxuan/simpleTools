@@ -13,6 +13,8 @@ import type {
   CompressionResult,
   IconGenPayload,
   IconGenResult,
+  ImageDiffPayload,
+  ImageDiffResult,
   InputFile,
   TaskProgress,
 } from "./types";
@@ -95,6 +97,9 @@ declare global {
         iconGen: {
           run: (payload: IconGenPayload) => Promise<IconGenResult>;
           onProgress: (callback: (p: TaskProgress) => void) => () => void;
+        };
+        imageDiff: {
+          run: (payload: ImageDiffPayload) => Promise<ImageDiffResult>;
         };
       };
     };

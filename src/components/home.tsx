@@ -33,6 +33,12 @@ const TOOL_CAPABILITIES: Partial<Record<ToolKey, string[]>> = {
     "favicon 含 apple-touch-icon (180×180) 标准尺寸",
     "支持单次多目标导出",
   ],
+  "image-diff": [
+    "两张图像素级比对，差异处红色高亮",
+    "差异指标：不同像素数 / 占比 / 最大单通道差 / 平均差",
+    "自动 contain 缩放统一尺寸，差异阈值可调（消除 JPEG 噪声）",
+    "调阈值时 350ms 防抖自动重算",
+  ],
 };
 
 const WORKFLOWS: { title: string; steps: { tool: ToolKey; text: string }[] }[] = [
