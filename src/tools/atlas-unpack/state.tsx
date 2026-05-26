@@ -8,7 +8,11 @@ import {
   useRef,
 } from "preact/hooks";
 import type { ComponentChildren } from "preact";
-import type { AtlasInspectResult, AtlasUnpackResult } from "../../shared/types";
+import type {
+  AtlasInspectResult,
+  AtlasUnpackResult,
+  TaskProgress,
+} from "../../shared/types";
 import { useRemembered } from "../../shared/use-remembered";
 
 export type AtlasUnpackState = {
@@ -21,6 +25,7 @@ export type AtlasUnpackState = {
   exporting: boolean;
   lastError: string;
   lastExport: AtlasUnpackResult | null;
+  progress: TaskProgress | null;
 };
 
 const initialState: AtlasUnpackState = {
@@ -33,6 +38,7 @@ const initialState: AtlasUnpackState = {
   exporting: false,
   lastError: "",
   lastExport: null,
+  progress: null,
 };
 
 type Action =
@@ -64,6 +70,14 @@ export function AtlasUnpackProvider({ children }: { children: ComponentChildren 
   useEffect(() => {
     stateRef.current = state;
   }, [state]);
+
+  // 订阅主进程导出进度
+  useEffect(() => {
+    const unsub = window.simpleImage.tools.atlasUnpack.onProgress((p) => {
+      dispatch({ type: "patch", payload: { progress: p } });
+    });
+    return unsub;
+  }, []);
 
   const patch = useCallback((payload: Partial<AtlasUnpackState>) => {
     dispatch({ type: "patch", payload });
@@ -126,7 +140,7 @@ export function AtlasUnpackProvider({ children }: { children: ComponentChildren 
     }
     dispatch({
       type: "patch",
-      payload: { exporting: true, lastError: "", lastExport: null },
+      payload: { exporting: true, lastError: "", lastExport: null, progress: null },
     });
     try {
       const result = await window.simpleImage.tools.atlasUnpack.export({
@@ -135,12 +149,16 @@ export function AtlasUnpackProvider({ children }: { children: ComponentChildren 
         outputDir: current.outputDir,
         restoreOriginalSize: current.restoreOriginalSize,
       });
-      dispatch({ type: "patch", payload: { exporting: false, lastExport: result } });
+      dispatch({
+        type: "patch",
+        payload: { exporting: false, lastExport: result, progress: null },
+      });
     } catch (e) {
       dispatch({
         type: "patch",
         payload: {
           exporting: false,
+          progress: null,
           lastError: e instanceof Error ? e.message : String(e),
         },
       });

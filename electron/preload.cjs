@@ -57,6 +57,11 @@ contextBridge.exposeInMainWorld("simpleImage", {
     atlasUnpack: {
       inspect: (payload) => ipcRenderer.invoke("tools:atlas-unpack:inspect", payload),
       export: (payload) => ipcRenderer.invoke("tools:atlas-unpack:export", payload),
+      onProgress: (callback) => {
+        const wrapped = (_e, payload) => callback(payload);
+        ipcRenderer.on("tools:atlas-unpack:progress", wrapped);
+        return () => ipcRenderer.off("tools:atlas-unpack:progress", wrapped);
+      },
     },
     atlasIncremental: {
       preview: (payload) => ipcRenderer.invoke("tools:atlas-incremental:preview", payload),

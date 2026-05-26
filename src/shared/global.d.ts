@@ -78,6 +78,7 @@ declare global {
             metadataPath: string;
           }) => Promise<AtlasInspectResult>;
           export: (payload: AtlasUnpackPayload) => Promise<AtlasUnpackResult>;
+          onProgress: (callback: (p: TaskProgress) => void) => () => void;
         };
         atlasIncremental: {
           preview: (payload: {

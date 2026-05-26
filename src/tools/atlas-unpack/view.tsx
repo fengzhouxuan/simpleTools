@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "preact/hooks";
 import { CopyPathButton } from "../../components/copy-path-button";
+import { ProgressBar } from "../../components/progress-bar";
 import { Spinner } from "../../components/spinner";
 import {
   guessAtlasForMetadata,
@@ -176,6 +177,10 @@ export function AtlasUnpackView() {
             </button>
           </div>
         </section>
+
+        {state.exporting && (
+          <ProgressBar progress={state.progress} taskLabel="拆分" />
+        )}
 
         <section class="advanced-panel">
           <div class="option-block">

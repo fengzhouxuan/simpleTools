@@ -244,7 +244,7 @@ function safeBaseName(name) {
   return name.replace(/\.\./g, "_").replace(/^\/+/, "");
 }
 
-async function unpackAtlas(payload) {
+async function unpackAtlas(payload, onProgress) {
   const inspect = await inspectAtlas(payload);
   const { frames } = inspect;
 
@@ -256,8 +256,11 @@ async function unpackAtlas(payload) {
   const outputPaths = [];
   const skipped = [];
   const startedAll = Date.now();
+  const total = frames.length;
 
-  for (const frame of frames) {
+  for (let i = 0; i < frames.length; i++) {
+    const frame = frames[i];
+    onProgress?.({ current: i, total, stage: `拆出 ${frame.name}` });
     try {
       // 1) extract atlas 中对应矩形
       let pipeline = sharp(atlasBuffer).extract({
@@ -308,6 +311,7 @@ async function unpackAtlas(payload) {
     `[atlas-unpack] done: ${outputPaths.length}/${frames.length} in ${Date.now() - startedAll}ms`,
   );
 
+  onProgress?.({ current: total, total, stage: "完成" });
   return { outputPaths, skipped };
 }
 
@@ -317,7 +321,11 @@ async function unpackAtlas(payload) {
 
 function register(ipcMain) {
   ipcMain.handle("tools:atlas-unpack:inspect", (_e, payload) => inspectAtlas(payload));
-  ipcMain.handle("tools:atlas-unpack:export", (_e, payload) => unpackAtlas(payload));
+  ipcMain.handle("tools:atlas-unpack:export", (event, payload) =>
+    unpackAtlas(payload, (p) =>
+      event.sender.send("tools:atlas-unpack:progress", p),
+    ),
+  );
 }
 
 module.exports = {
