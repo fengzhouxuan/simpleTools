@@ -143,7 +143,14 @@ export function AtlasPreview({ result }: Props) {
   if (!result || result.pages.length === 0) {
     return (
       <div class="atlas-preview empty" ref={containerRef}>
-        <span>导入小图后即可看到打包预览</span>
+        <div class="empty-state">
+          <div class="empty-state-illustration" aria-hidden="true" />
+          <strong>等待图集预览</strong>
+          <span>
+            从左边拖入小图或点"添加小图"，
+            打包结果会自动算出来画在这里
+          </span>
+        </div>
       </div>
     );
   }

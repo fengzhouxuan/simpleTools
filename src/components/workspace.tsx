@@ -1,14 +1,14 @@
 import { useNavigation } from "../state/navigation";
 import { HomeView } from "./home";
+import { ErrorBoundary } from "./error-boundary";
 import { CompressView } from "../tools/compress/view";
 import { AtlasPackView } from "../tools/atlas-pack/view";
 import { AtlasIncrementalView } from "../tools/atlas-incremental/view";
 import { AtlasUnpackView } from "../tools/atlas-unpack/view";
 import { IconGenView } from "../tools/icon-gen/view";
+import { toolMeta } from "../tools/tool-meta";
 
-export function Workspace() {
-  const { currentTool } = useNavigation();
-
+function renderTool(currentTool: ReturnType<typeof useNavigation>["currentTool"]) {
   switch (currentTool) {
     case "home":
       return <HomeView />;
@@ -23,4 +23,14 @@ export function Workspace() {
     case "icon-gen":
       return <IconGenView />;
   }
+}
+
+export function Workspace() {
+  const { currentTool } = useNavigation();
+  // 切工具时强制重 mount ErrorBoundary，让上一个工具的错误状态清空
+  return (
+    <ErrorBoundary key={currentTool} contextLabel={toolMeta[currentTool].label}>
+      {renderTool(currentTool)}
+    </ErrorBoundary>
+  );
 }
