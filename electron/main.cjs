@@ -7,6 +7,7 @@ const compress = require("./tools/compress.cjs");
 const atlasPack = require("./tools/atlas-pack.cjs");
 const atlasUnpack = require("./tools/atlas-unpack.cjs");
 const atlasIncremental = require("./tools/atlas-incremental.cjs");
+const iconGen = require("./tools/icon-gen.cjs");
 
 function resolveRendererEntry() {
   const devServerUrl = process.env.SIMPLEIMAGE_DEV_SERVER_URL;
@@ -71,6 +72,7 @@ compress.register(ipcMain);
 atlasPack.register(ipcMain);
 atlasUnpack.register(ipcMain);
 atlasIncremental.register(ipcMain);
+iconGen.register(ipcMain);
 
 app.whenReady().then(() => {
   createWindow();

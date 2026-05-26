@@ -4,6 +4,7 @@ import { CompressView } from "../tools/compress/view";
 import { AtlasPackView } from "../tools/atlas-pack/view";
 import { AtlasIncrementalView } from "../tools/atlas-incremental/view";
 import { AtlasUnpackView } from "../tools/atlas-unpack/view";
+import { IconGenView } from "../tools/icon-gen/view";
 
 export function Workspace() {
   const { currentTool } = useNavigation();
@@ -19,5 +20,7 @@ export function Workspace() {
       return <AtlasIncrementalView />;
     case "atlas-unpack":
       return <AtlasUnpackView />;
+    case "icon-gen":
+      return <IconGenView />;
   }
 }

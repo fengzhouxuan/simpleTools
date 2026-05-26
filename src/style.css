@@ -1489,6 +1489,62 @@ input[type="checkbox"] {
   line-height: 1.4;
 }
 
+/* ===== icon-gen 目标格式卡片 ===== */
+.icon-target-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.icon-target-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 16px;
+  text-align: left;
+  background: transparent;
+  border: 0.5px solid var(--hairline);
+  border-radius: var(--radius-card);
+  cursor: pointer;
+  transition: background-color 80ms ease, border-color 80ms ease;
+  -webkit-app-region: no-drag;
+}
+
+.icon-target-card:hover {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+@media (prefers-color-scheme: dark) {
+  .icon-target-card:hover {
+    background: rgba(255, 255, 255, 0.04);
+  }
+}
+
+.icon-target-card.is-active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.icon-target-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.icon-target-head strong {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.icon-target-desc {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.icon-target-hint {
+  color: var(--text-tertiary);
+  font-size: 11px;
+}
+
 /* ===== 进度条 ===== */
 
 .progress-bar {

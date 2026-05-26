@@ -11,6 +11,8 @@ import type {
   AtlasUnpackResult,
   CompressPayload,
   CompressionResult,
+  IconGenPayload,
+  IconGenResult,
   InputFile,
   TaskProgress,
 } from "./types";
@@ -79,6 +81,10 @@ declare global {
             payload: AtlasIncrementalPayload,
           ) => Promise<AtlasIncrementalResult>;
           clearCache: () => Promise<void>;
+          onProgress: (callback: (p: TaskProgress) => void) => () => void;
+        };
+        iconGen: {
+          run: (payload: IconGenPayload) => Promise<IconGenResult>;
           onProgress: (callback: (p: TaskProgress) => void) => () => void;
         };
       };

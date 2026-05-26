@@ -3,7 +3,8 @@ export type ToolKey =
   | "compress"
   | "atlas-pack"
   | "atlas-incremental"
-  | "atlas-unpack";
+  | "atlas-unpack"
+  | "icon-gen";
 
 export type ToolStatus = "available" | "planned" | "workspace";
 
@@ -147,6 +148,26 @@ export type AtlasUnpackPayload = {
 export type AtlasUnpackResult = {
   outputPaths: string[];
   skipped: { name: string; reason: string }[];
+};
+
+// ===== icon-gen =====
+
+export type IconExportTarget =
+  | "macos-icns"   // .icns 文件（用 iconutil 命令打包）
+  | "windows-ico"  // .ico 文件（用 to-ico 库）
+  | "favicon"      // 一组 PNG（16/32/64/180/192/256/512）
+  | "pwa";         // 一组 PNG（192/512/1024）
+
+export type IconGenPayload = {
+  sourcePath: string;
+  outputDir: string;
+  outputName: string;        // 文件名前缀，默认 "icon"
+  targets: IconExportTarget[];
+};
+
+export type IconGenResult = {
+  outputPaths: string[];
+  skipped: { target: string; reason: string }[];
 };
 
 // ===== atlas-incremental =====

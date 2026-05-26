@@ -27,6 +27,12 @@ const TOOL_CAPABILITIES: Partial<Record<ToolKey, string[]>> = {
     "实时预览 + 拆图缓存（参数变化无需重新拆图）",
     "差异检测：新增 / 修改 / 复用",
   ],
+  "icon-gen": [
+    "一张大图 → macOS .icns / Windows .ico / Web favicon / PWA 全套",
+    "macOS 走 iconutil（系统自带），免装额外工具",
+    "favicon 含 apple-touch-icon (180×180) 标准尺寸",
+    "支持单次多目标导出",
+  ],
 };
 
 const WORKFLOWS: { title: string; steps: { tool: ToolKey; text: string }[] }[] = [

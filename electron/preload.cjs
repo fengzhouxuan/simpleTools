@@ -53,5 +53,13 @@ contextBridge.exposeInMainWorld("simpleImage", {
         return () => ipcRenderer.off("tools:atlas-incremental:progress", wrapped);
       },
     },
+    iconGen: {
+      run: (payload) => ipcRenderer.invoke("tools:icon-gen:run", payload),
+      onProgress: (callback) => {
+        const wrapped = (_e, payload) => callback(payload);
+        ipcRenderer.on("tools:icon-gen:progress", wrapped);
+        return () => ipcRenderer.off("tools:icon-gen:progress", wrapped);
+      },
+    },
   },
 });

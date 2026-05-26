@@ -32,6 +32,11 @@ export const toolMeta: Record<ToolKey, ToolMeta> = {
     status: "available",
     description: "解析 plist / JSON / CSS 元数据，把图集还原为单图。",
   },
+  "icon-gen": {
+    label: "图标生成",
+    status: "available",
+    description: "一张大图 → macOS / Windows / Web / PWA 全套图标。",
+  },
 };
 
 export const navToolOrder: ToolKey[] = [
@@ -40,6 +45,7 @@ export const navToolOrder: ToolKey[] = [
   "atlas-pack",
   "atlas-incremental",
   "atlas-unpack",
+  "icon-gen",
 ];
 
 export const homeToolOrder: ToolKey[] = [
@@ -47,4 +53,5 @@ export const homeToolOrder: ToolKey[] = [
   "atlas-pack",
   "atlas-incremental",
   "atlas-unpack",
+  "icon-gen",
 ];

@@ -4,6 +4,7 @@ import { CompressProvider } from "./tools/compress/state";
 import { AtlasPackProvider } from "./tools/atlas-pack/state";
 import { AtlasUnpackProvider } from "./tools/atlas-unpack/state";
 import { AtlasIncrementalProvider } from "./tools/atlas-incremental/state";
+import { IconGenProvider } from "./tools/icon-gen/state";
 import { ToolNav } from "./components/tool-nav";
 import { Workspace } from "./components/workspace";
 
@@ -24,6 +25,7 @@ export function App() {
         <AtlasPackProvider>
         <AtlasUnpackProvider>
         <AtlasIncrementalProvider>
+        <IconGenProvider>
         <main class="tuya-shell">
           <header class="tuya-titlebar">
             <strong>SimpleImageCompress</strong>
@@ -35,6 +37,7 @@ export function App() {
             </section>
           </div>
         </main>
+        </IconGenProvider>
         </AtlasIncrementalProvider>
         </AtlasUnpackProvider>
         </AtlasPackProvider>

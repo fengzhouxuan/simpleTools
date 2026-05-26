@@ -256,6 +256,14 @@ npm run dist:mac
   - `parseMetadata()` 4 种格式各自解析为统一的 `ParsedAtlasFrame[]`（plist 用正则；JSON 直接 parse；CSS 正则识别 `.sprite-xxx` 规则）
   - `unpackAtlas()` 用 `sharp(atlasBuffer).extract()` 切矩形 → `rotate(-90)` 还原 rotate → 可选 composite 到 sourceSize 还原 trim → 写 PNG
 
+- [electron/tools/icon-gen.cjs](/Users/wepie/Documents/Github/SimpleImage/electron/tools/icon-gen.cjs)
+  图标生成工具：一张大图 → 多目标输出：
+  - `macos-icns`：按 Apple 官方 iconset 文件命名规范生成 10 张 PNG（16/32/64/128/256/512/1024 + @2x 变体）放在临时 iconset 目录 → 调系统 `iconutil -c icns` 打包 → 清理临时目录
+  - `windows-ico`：6 张 PNG buffer (16/32/48/64/128/256) 喂给 `to-ico` 库合成单 `.ico`
+  - `favicon`：7 张 PNG（含 apple-touch-icon 180×180）
+  - `pwa`：3 张 PNG（192/512/1024）
+  - 所有 sharp.resize 用 `fit: "contain"` + 透明背景，保证图标比例不变形
+
 - [electron/tools/atlas-incremental.cjs](/Users/wepie/Documents/Github/SimpleImage/electron/tools/atlas-incremental.cjs)
   图集增量打包（merge 模式）：
   - 输入：旧 atlas 图片 + 旧元数据（plist/json/css）+ 想加/改的散图
@@ -278,8 +286,9 @@ npm run dist:mac
 - `tools.atlasPack.export(payload)` — 图集打包并写文件
 - `tools.atlasUnpack.inspect(payload)` — 解析图集元数据返回 frame 列表
 - `tools.atlasUnpack.export(payload)` — 拆分图集并写出各子图
-- `tools.atlasIncremental.inspect(payload)` — 按 manifest + 新源图列出差异
-- `tools.atlasIncremental.export(payload)` — 生成附加页 + 新 manifest
+- `tools.atlasIncremental.preview(payload)` — 算 diff + packResult，给前端预览用（拆图带缓存）
+- `tools.atlasIncremental.export(payload)` — merge + 全量重打写盘
+- `tools.iconGen.run(payload)` — 一张大图 → 多目标图标集
 
 新增工具的能力时遵循这条链路：
 

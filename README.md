@@ -36,6 +36,7 @@ SimpleImageCompress 当前是一个纯本地的桌面图片压缩工具原型，
 - 图集打包（MaxRects 算法）：实时预览、参数面板、4 种元数据格式（Cocos2d-x plist / TexturePacker JSON Hash / JSON Array / CSS Sprite）、支持 trim / rotate / POT / 多页输出
 - 图集拆分：解析 plist / JSON / CSS 元数据，把图集还原为单图，支持 trim/rotate 还原
 - 图集增量打包（merge 模式）：拆开旧图集 + 合并新散图（新散图按文件名覆盖同名旧子图） → 全量重打成一张新图集，输入只要旧 atlas + 旧元数据 + 想加/改的散图
+- 图标生成：一张大图 → macOS `.icns` / Windows `.ico` / Web favicon / PWA 全套图标，macOS 走系统自带 `iconutil`
 
 ## 环境要求
 
