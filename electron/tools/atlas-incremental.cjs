@@ -30,10 +30,13 @@ async function loadOldFrames(atlasPath, metadataPath) {
 // 2) 拆图到临时目录（核心）
 // ============================================================
 
-async function extractOldFramesToTmpDir(atlasPath, frames, tmpDir) {
+async function extractOldFramesToTmpDir(atlasPath, frames, tmpDir, onProgress) {
   const atlasBuffer = await fs.readFile(atlasPath);
   const out = [];
-  for (const frame of frames) {
+  const total = frames.length;
+  for (let i = 0; i < frames.length; i++) {
+    const frame = frames[i];
+    onProgress?.({ current: i, total, stage: `拆出 ${frame.name}` });
     try {
       let pipeline = sharp(atlasBuffer).extract({
         left: frame.x,
@@ -74,7 +77,7 @@ async function clearCache() {
   }
 }
 
-async function getOrExtract(atlasPath, metadataPath) {
+async function getOrExtract(atlasPath, metadataPath, onProgress) {
   const key = `${atlasPath}|${metadataPath}`;
   if (extractCache && extractCache.key === key) {
     return extractCache;
@@ -88,7 +91,12 @@ async function getOrExtract(atlasPath, metadataPath) {
   );
   console.log(`[atlas-incremental] tmp dir: ${tmpDir}`);
   const startedAt = Date.now();
-  const extracted = await extractOldFramesToTmpDir(atlasPath, frames, tmpDir);
+  const extracted = await extractOldFramesToTmpDir(
+    atlasPath,
+    frames,
+    tmpDir,
+    onProgress,
+  );
   console.log(
     `[atlas-incremental] extracted ${extracted.length} frames in ${Date.now() - startedAt}ms`,
   );
@@ -165,29 +173,35 @@ async function previewIncremental(payload) {
 // 6) export: 全量重打 + 写盘（复用 cache）
 // ============================================================
 
-async function exportIncremental(payload) {
+async function exportIncremental(payload, onProgress) {
   if (!payload.atlasPath || !payload.metadataPath) {
     throw new Error("需要同时选择旧 atlas 图片和旧元数据文件");
   }
 
+  // 拆图阶段：进度按"frame 数"汇报
   const { extracted, oldFrames } = await getOrExtract(
     payload.atlasPath,
     payload.metadataPath,
+    (p) => onProgress?.({ ...p, stage: `拆旧图集：${p.stage}` }),
   );
   const merged = mergeInputs(extracted, payload.newSourcePaths);
 
-  const packed = await atlasPack.exportAtlas({
-    inputs: merged,
-    maxWidth: payload.maxWidth,
-    maxHeight: payload.maxHeight,
-    padding: payload.padding,
-    allowRotate: payload.allowRotate,
-    pot: payload.pot,
-    trim: payload.trim,
-    outputDir: payload.outputDir,
-    outputName: payload.outputName,
-    format: payload.format,
-  });
+  // 重打阶段：透传 atlas-pack 的进度，prefix 一下
+  const packed = await atlasPack.exportAtlas(
+    {
+      inputs: merged,
+      maxWidth: payload.maxWidth,
+      maxHeight: payload.maxHeight,
+      padding: payload.padding,
+      allowRotate: payload.allowRotate,
+      pot: payload.pot,
+      trim: payload.trim,
+      outputDir: payload.outputDir,
+      outputName: payload.outputName,
+      format: payload.format,
+    },
+    (p) => onProgress?.({ ...p, stage: `重打：${p.stage}` }),
+  );
 
   return {
     diff: computeDiff(oldFrames, payload.newSourcePaths),
@@ -207,8 +221,10 @@ function register(ipcMain) {
   ipcMain.handle("tools:atlas-incremental:preview", (_e, payload) =>
     previewIncremental(payload),
   );
-  ipcMain.handle("tools:atlas-incremental:export", (_e, payload) =>
-    exportIncremental(payload),
+  ipcMain.handle("tools:atlas-incremental:export", (event, payload) =>
+    exportIncremental(payload, (p) =>
+      event.sender.send("tools:atlas-incremental:progress", p),
+    ),
   );
   ipcMain.handle("tools:atlas-incremental:clear-cache", () => clearCache());
 }

@@ -19,10 +19,20 @@ contextBridge.exposeInMainWorld("simpleImage", {
   tools: {
     compress: {
       run: (payload) => ipcRenderer.invoke("tools:compress:run", payload),
+      onProgress: (callback) => {
+        const wrapped = (_e, payload) => callback(payload);
+        ipcRenderer.on("tools:compress:progress", wrapped);
+        return () => ipcRenderer.off("tools:compress:progress", wrapped);
+      },
     },
     atlasPack: {
       pack: (payload) => ipcRenderer.invoke("tools:atlas-pack:pack", payload),
       export: (payload) => ipcRenderer.invoke("tools:atlas-pack:export", payload),
+      onProgress: (callback) => {
+        const wrapped = (_e, payload) => callback(payload);
+        ipcRenderer.on("tools:atlas-pack:progress", wrapped);
+        return () => ipcRenderer.off("tools:atlas-pack:progress", wrapped);
+      },
     },
     atlasUnpack: {
       inspect: (payload) => ipcRenderer.invoke("tools:atlas-unpack:inspect", payload),
@@ -32,6 +42,11 @@ contextBridge.exposeInMainWorld("simpleImage", {
       preview: (payload) => ipcRenderer.invoke("tools:atlas-incremental:preview", payload),
       export: (payload) => ipcRenderer.invoke("tools:atlas-incremental:export", payload),
       clearCache: () => ipcRenderer.invoke("tools:atlas-incremental:clear-cache"),
+      onProgress: (callback) => {
+        const wrapped = (_e, payload) => callback(payload);
+        ipcRenderer.on("tools:atlas-incremental:progress", wrapped);
+        return () => ipcRenderer.off("tools:atlas-incremental:progress", wrapped);
+      },
     },
   },
 });

@@ -362,7 +362,8 @@ function serializeMetadata(page, imageName, format) {
 // 6) exportAtlas: 实际写盘
 // ============================================================
 
-async function exportAtlas(payload) {
+async function exportAtlas(payload, onProgress) {
+  onProgress?.({ current: 0, total: 1, stage: "计算坐标" });
   const result = await packAtlas(payload);
   if (result.pages.length === 0) {
     return { pageImagePaths: [], metadataPaths: [] };
@@ -374,6 +375,7 @@ async function exportAtlas(payload) {
   const metadataPaths = [];
   const pageImageNames = [];
   const multi = result.pages.length > 1;
+  const totalPages = result.pages.length;
 
   for (const page of result.pages) {
     const suffix = multi ? `-${page.index + 1}` : "";
@@ -384,6 +386,11 @@ async function exportAtlas(payload) {
     console.log(
       `[atlas-pack] page ${page.index + 1}/${result.pages.length}: ${page.width}x${page.height}, ${page.frames.length} frames, util=${(page.utilization * 100).toFixed(1)}%`,
     );
+    onProgress?.({
+      current: page.index,
+      total: totalPages,
+      stage: `合成 ${imageName}（${page.frames.length} 个子图）`,
+    });
 
     const buffer = await composePageImage(page, payload);
     await fs.writeFile(imagePath, buffer);
@@ -439,6 +446,7 @@ async function exportAtlas(payload) {
     console.error("[atlas-pack] manifest write failed:", e.message);
   }
 
+  onProgress?.({ current: totalPages, total: totalPages, stage: "完成" });
   return { pageImagePaths, metadataPaths, manifestPath };
 }
 
@@ -448,7 +456,11 @@ async function exportAtlas(payload) {
 
 function register(ipcMain) {
   ipcMain.handle("tools:atlas-pack:pack", (_e, payload) => packAtlas(payload));
-  ipcMain.handle("tools:atlas-pack:export", (_e, payload) => exportAtlas(payload));
+  ipcMain.handle("tools:atlas-pack:export", (event, payload) =>
+    exportAtlas(payload, (p) =>
+      event.sender.send("tools:atlas-pack:progress", p),
+    ),
+  );
 }
 
 module.exports = {

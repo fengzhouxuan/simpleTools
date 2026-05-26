@@ -12,6 +12,7 @@ import type {
   CompressPayload,
   CompressionResult,
   InputFile,
+  TaskProgress,
 } from "./types";
 
 type AtlasIncrementalPreviewResult = {
@@ -43,10 +44,12 @@ declare global {
       tools: {
         compress: {
           run: (payload: CompressPayload) => Promise<CompressionResult[]>;
+          onProgress: (callback: (p: TaskProgress) => void) => () => void;
         };
         atlasPack: {
           pack: (payload: AtlasPackOptions) => Promise<AtlasPackResult>;
           export: (payload: AtlasExportPayload) => Promise<AtlasExportResult>;
+          onProgress: (callback: (p: TaskProgress) => void) => () => void;
         };
         atlasUnpack: {
           inspect: (payload: {
@@ -71,6 +74,7 @@ declare global {
             payload: AtlasIncrementalPayload,
           ) => Promise<AtlasIncrementalResult>;
           clearCache: () => Promise<void>;
+          onProgress: (callback: (p: TaskProgress) => void) => () => void;
         };
       };
     };

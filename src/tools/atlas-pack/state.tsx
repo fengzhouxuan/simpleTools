@@ -14,6 +14,7 @@ import type {
   AtlasMetadataFormat,
   AtlasPackResult,
   InputFile,
+  TaskProgress,
 } from "../../shared/types";
 
 export type AtlasPackState = {
@@ -32,6 +33,7 @@ export type AtlasPackState = {
   exporting: boolean;
   lastError: string;
   lastExport: AtlasExportResult | null;
+  progress: TaskProgress | null;
 };
 
 const initialState: AtlasPackState = {
@@ -50,6 +52,7 @@ const initialState: AtlasPackState = {
   exporting: false,
   lastError: "",
   lastExport: null,
+  progress: null,
 };
 
 type Action =
@@ -109,6 +112,14 @@ export function AtlasPackProvider({ children }: { children: ComponentChildren })
   useEffect(() => {
     stateRef.current = state;
   }, [state]);
+
+  // 订阅主进程导出进度
+  useEffect(() => {
+    const unsub = window.simpleImage.tools.atlasPack.onProgress((p) => {
+      dispatch({ type: "patch", payload: { progress: p } });
+    });
+    return unsub;
+  }, []);
 
   const patch = useCallback((payload: Partial<AtlasPackState>) => {
     dispatch({ type: "patch", payload });
@@ -177,7 +188,12 @@ export function AtlasPackProvider({ children }: { children: ComponentChildren })
     }
     dispatch({
       type: "patch",
-      payload: { exporting: true, lastError: "", lastExport: null },
+      payload: {
+        exporting: true,
+        lastError: "",
+        lastExport: null,
+        progress: null,
+      },
     });
     try {
       const result = await window.simpleImage.tools.atlasPack.export({
@@ -192,12 +208,16 @@ export function AtlasPackProvider({ children }: { children: ComponentChildren })
         outputName: current.outputName,
         format: current.format,
       });
-      dispatch({ type: "patch", payload: { exporting: false, lastExport: result } });
+      dispatch({
+        type: "patch",
+        payload: { exporting: false, lastExport: result, progress: null },
+      });
     } catch (e) {
       dispatch({
         type: "patch",
         payload: {
           exporting: false,
+          progress: null,
           lastError: e instanceof Error ? e.message : String(e),
         },
       });

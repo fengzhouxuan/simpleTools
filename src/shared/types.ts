@@ -22,6 +22,13 @@ export type ResizeMode = "stretch" | "crop";
 export type SaveMode = "source" | "overwrite-source" | "custom";
 export type PresetKey = "web" | "social" | "archive" | "minimal" | "custom";
 
+// 主进程推送给渲染层的批量任务进度
+export type TaskProgress = {
+  current: number;
+  total: number;
+  stage: string;
+};
+
 export type CompressionResult = InputFile & {
   outputPath?: string;
   outputSize?: number;

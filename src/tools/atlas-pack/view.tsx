@@ -1,4 +1,5 @@
 import { FileImportZone } from "../../components/file-import";
+import { ProgressBar } from "../../components/progress-bar";
 import { useAtlasPack } from "./state";
 import { AtlasPreview } from "./preview";
 
@@ -106,6 +107,10 @@ export function AtlasPackView() {
             </button>
           </div>
         </section>
+
+        {state.exporting && (
+          <ProgressBar progress={state.progress} taskLabel="导出" />
+        )}
 
         {/* 参数面板 */}
         <section class="settings-grid">

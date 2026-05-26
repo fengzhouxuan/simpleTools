@@ -1,4 +1,5 @@
 import { FileImportZone } from "../../components/file-import";
+import { ProgressBar } from "../../components/progress-bar";
 import {
   guessAtlasForMetadata,
   guessMetadataForAtlas,
@@ -233,6 +234,10 @@ export function AtlasIncrementalView() {
             </button>
           </div>
         </section>
+
+        {state.exporting && (
+          <ProgressBar progress={state.progress} taskLabel="增量打包" />
+        )}
 
         {/* 重打参数 */}
         <section class="settings-grid">

@@ -14,6 +14,7 @@ import type {
   AtlasMetadataFormat,
   AtlasPackResult,
   InputFile,
+  TaskProgress,
 } from "../../shared/types";
 
 export type AtlasIncrementalState = {
@@ -43,6 +44,7 @@ export type AtlasIncrementalState = {
   exporting: boolean;
   lastError: string;
   lastExport: AtlasIncrementalResult | null;
+  progress: TaskProgress | null;
 };
 
 const initialState: AtlasIncrementalState = {
@@ -65,6 +67,7 @@ const initialState: AtlasIncrementalState = {
   exporting: false,
   lastError: "",
   lastExport: null,
+  progress: null,
 };
 
 type Action =
@@ -113,6 +116,14 @@ export function AtlasIncrementalProvider({ children }: { children: ComponentChil
   useEffect(() => {
     stateRef.current = state;
   }, [state]);
+
+  // 订阅主进程导出进度
+  useEffect(() => {
+    const unsub = window.simpleImage.tools.atlasIncremental.onProgress((p) => {
+      dispatch({ type: "patch", payload: { progress: p } });
+    });
+    return unsub;
+  }, []);
 
   const patch = useCallback((payload: Partial<AtlasIncrementalState>) => {
     dispatch({ type: "patch", payload });
@@ -204,7 +215,12 @@ export function AtlasIncrementalProvider({ children }: { children: ComponentChil
     }
     dispatch({
       type: "patch",
-      payload: { exporting: true, lastError: "", lastExport: null },
+      payload: {
+        exporting: true,
+        lastError: "",
+        lastExport: null,
+        progress: null,
+      },
     });
     try {
       const result = await window.simpleImage.tools.atlasIncremental.export({
@@ -221,12 +237,16 @@ export function AtlasIncrementalProvider({ children }: { children: ComponentChil
         pot: c.pot,
         trim: c.trim,
       });
-      dispatch({ type: "patch", payload: { exporting: false, lastExport: result } });
+      dispatch({
+        type: "patch",
+        payload: { exporting: false, lastExport: result, progress: null },
+      });
     } catch (e) {
       dispatch({
         type: "patch",
         payload: {
           exporting: false,
+          progress: null,
           lastError: e instanceof Error ? e.message : String(e),
         },
       });

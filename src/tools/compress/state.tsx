@@ -16,6 +16,7 @@ import type {
   PresetKey,
   ResizeMode,
   SaveMode,
+  TaskProgress,
 } from "../../shared/types";
 import { PRESET_SENSITIVE_KEYS, presetMap } from "./presets";
 
@@ -35,6 +36,7 @@ export type CompressState = {
   results: CompressionResult[];
   running: boolean;
   showAdvanced: boolean;
+  progress: TaskProgress | null;
 };
 
 const initialState: CompressState = {
@@ -54,6 +56,7 @@ const initialState: CompressState = {
   results: [],
   running: false,
   showAdvanced: true,
+  progress: null,
 };
 
 type Action =
@@ -128,6 +131,14 @@ export function CompressProvider({ children }: { children: ComponentChildren }) 
     stateRef.current = state;
   }, [state]);
 
+  // 订阅主进程的进度推送
+  useEffect(() => {
+    const unsub = window.simpleImage.tools.compress.onProgress((p) => {
+      dispatch({ type: "patch", payload: { progress: p } });
+    });
+    return unsub;
+  }, []);
+
   const patch = useCallback((payload: Partial<CompressState>) => {
     dispatch({ type: "patch", payload });
   }, []);
@@ -177,15 +188,18 @@ export function CompressProvider({ children }: { children: ComponentChildren }) 
       return;
     }
 
-    dispatch({ type: "patch", payload: { running: true } });
+    dispatch({ type: "patch", payload: { running: true, progress: null } });
 
     try {
       const results = await window.simpleImage.tools.compress.run(
         buildPayload(current.files),
       );
-      dispatch({ type: "patch", payload: { results, running: false } });
+      dispatch({
+        type: "patch",
+        payload: { results, running: false, progress: null },
+      });
     } catch (error) {
-      dispatch({ type: "patch", payload: { running: false } });
+      dispatch({ type: "patch", payload: { running: false, progress: null } });
       throw error;
     }
   }, [buildPayload]);

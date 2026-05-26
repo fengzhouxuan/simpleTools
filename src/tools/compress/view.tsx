@@ -6,6 +6,7 @@ import {
 } from "../../shared/format";
 import { FileImportZone } from "../../components/file-import";
 import { ResultList } from "../../components/result-list";
+import { ProgressBar } from "../../components/progress-bar";
 import { getQualityLevel, useCompressState } from "./state";
 import { PresetBar } from "./preset-bar";
 
@@ -140,6 +141,8 @@ export function CompressView() {
             </button>
           </div>
         </section>
+
+        {state.running && <ProgressBar progress={state.progress} taskLabel="压缩" />}
 
         <PresetBar />
 

@@ -234,7 +234,7 @@ async function compressSvg(inputPath, outputPath) {
   await fs.writeFile(outputPath, result.data, "utf8");
 }
 
-async function compressImages(payload) {
+async function compressImages(payload, onProgress) {
   const {
     files,
     outputDir,
@@ -251,8 +251,11 @@ async function compressImages(payload) {
   }
 
   const results = [];
+  const total = files.length;
 
-  for (const file of files) {
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    onProgress?.({ current: i, total, stage: `压缩 ${file.name}` });
     const ext = path.extname(file.path).toLowerCase();
     const normalizedOutputFormat = RASTER_OUTPUT_FORMATS.has(outputFormat) ? outputFormat : "original";
     const nextExt = isRasterExtension(ext)
@@ -319,11 +322,16 @@ async function compressImages(payload) {
     }
   }
 
+  onProgress?.({ current: total, total, stage: "完成" });
   return results;
 }
 
 function register(ipcMain) {
-  ipcMain.handle("tools:compress:run", (_event, payload) => compressImages(payload));
+  ipcMain.handle("tools:compress:run", (event, payload) =>
+    compressImages(payload, (p) =>
+      event.sender.send("tools:compress:progress", p),
+    ),
+  );
 }
 
 module.exports = {
