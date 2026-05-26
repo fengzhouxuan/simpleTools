@@ -1,7 +1,8 @@
-import { useState } from "preact/hooks";
+import { useEffect, useRef, useState } from "preact/hooks";
 import { ProgressBar } from "../../components/progress-bar";
 import { CopyPathButton } from "../../components/copy-path-button";
 import { Spinner } from "../../components/spinner";
+import { useToast } from "../../shared/toast";
 import { usePrimaryAction } from "../../shared/use-primary-action";
 import type { IconExportTarget } from "../../shared/types";
 import { useIconGen } from "./state";
@@ -105,6 +106,31 @@ export function IconGenView() {
     !state.running;
 
   usePrimaryAction(canRun, () => void runGenerate());
+
+  const toast = useToast();
+  const wasRunningRef = useRef(false);
+  useEffect(() => {
+    if (wasRunningRef.current && !state.running) {
+      if (state.lastResult) {
+        const total = state.lastResult.outputPaths.length;
+        const skipped = state.lastResult.skipped.length;
+        if (total > 0 && skipped === 0) {
+          toast.push({ type: "success", message: `图标生成完成：${total} 个文件` });
+        } else if (total > 0 && skipped > 0) {
+          toast.push({
+            type: "warning",
+            message: `生成完成：${total} 成功，${skipped} 失败（${state.lastResult.skipped.map((s) => s.target).join(", ")}）`,
+          });
+        } else {
+          toast.push({ type: "error", message: "没有图标生成成功" });
+        }
+      } else if (state.lastError) {
+        toast.push({ type: "error", message: state.lastError });
+      }
+    }
+    wasRunningRef.current = state.running;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.running]);
 
   const summary = state.lastResult
     ? `${state.lastResult.outputPaths.length} 个文件已生成${

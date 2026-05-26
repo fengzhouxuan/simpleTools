@@ -1,7 +1,9 @@
+import { useEffect, useRef } from "preact/hooks";
 import { FileImportZone } from "../../components/file-import";
 import { ProgressBar } from "../../components/progress-bar";
 import { CopyPathButton } from "../../components/copy-path-button";
 import { Spinner } from "../../components/spinner";
+import { useToast } from "../../shared/toast";
 import { usePrimaryAction } from "../../shared/use-primary-action";
 import { useAtlasPack } from "./state";
 import { AtlasPreview } from "./preview";
@@ -49,6 +51,23 @@ export function AtlasPackView() {
     hasInputs && !!state.outputDir && !state.exporting && !state.packing && !!result;
 
   usePrimaryAction(canExport, () => void exportAtlas());
+
+  const toast = useToast();
+  const wasExportingRef = useRef(false);
+  useEffect(() => {
+    if (wasExportingRef.current && !state.exporting) {
+      if (state.lastExport && state.lastExport.pageImagePaths.length > 0) {
+        toast.push({
+          type: "success",
+          message: `导出完成：${state.lastExport.pageImagePaths.length} 张图集 + ${state.lastExport.metadataPaths.length} 份元数据`,
+        });
+      } else if (state.lastError) {
+        toast.push({ type: "error", message: state.lastError });
+      }
+    }
+    wasExportingRef.current = state.exporting;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.exporting]);
 
   const summary = result
     ? `${result.pages.length} 页 · 利用率 ${(result.totalUtilization * 100).toFixed(1)}% · 共 ${result.pages.reduce((s, p) => s + p.frames.length, 0)} 个子图`

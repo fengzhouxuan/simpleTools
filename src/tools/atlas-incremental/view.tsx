@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "preact/hooks";
 import { FileImportZone } from "../../components/file-import";
 import { ProgressBar } from "../../components/progress-bar";
 import { CopyPathButton } from "../../components/copy-path-button";
@@ -6,6 +7,7 @@ import {
   guessAtlasForMetadata,
   guessMetadataForAtlas,
 } from "../../shared/sibling-guess";
+import { useToast } from "../../shared/toast";
 import { usePrimaryAction } from "../../shared/use-primary-action";
 import { AtlasPreview } from "../atlas-pack/preview";
 import { useAtlasIncremental } from "./state";
@@ -76,6 +78,23 @@ export function AtlasIncrementalView() {
   const canExport = oldLoaded && !!state.outputDir && !!diff && !state.exporting;
 
   usePrimaryAction(canExport, () => void runExport());
+
+  const toast = useToast();
+  const wasExportingRef = useRef(false);
+  useEffect(() => {
+    if (wasExportingRef.current && !state.exporting) {
+      if (state.lastExport && state.lastExport.pageImagePaths.length > 0) {
+        toast.push({
+          type: "success",
+          message: `已生成新图集：${state.lastExport.pageImagePaths.length} 张 atlas`,
+        });
+      } else if (state.lastError) {
+        toast.push({ type: "error", message: state.lastError });
+      }
+    }
+    wasExportingRef.current = state.exporting;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.exporting]);
 
   const summary = diff
     ? `+${diff.added.length} 改${diff.modified.length} 复用${diff.unchanged.length}${

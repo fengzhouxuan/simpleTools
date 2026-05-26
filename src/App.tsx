@@ -9,6 +9,7 @@ import { ToolNav } from "./components/tool-nav";
 import { Workspace } from "./components/workspace";
 import { ThemeSwitcher } from "./components/theme-switcher";
 import { ThemeProvider } from "./shared/theme";
+import { ToastProvider } from "./shared/toast";
 
 export function App() {
   useEffect(() => {
@@ -23,6 +24,7 @@ export function App() {
 
   return (
     <ThemeProvider>
+    <ToastProvider>
     <NavigationProvider>
       <CompressProvider>
         <AtlasPackProvider>
@@ -47,6 +49,7 @@ export function App() {
         </AtlasPackProvider>
       </CompressProvider>
     </NavigationProvider>
+    </ToastProvider>
     </ThemeProvider>
   );
 }

@@ -1,9 +1,11 @@
+import { useEffect, useRef } from "preact/hooks";
 import { CopyPathButton } from "../../components/copy-path-button";
 import { Spinner } from "../../components/spinner";
 import {
   guessAtlasForMetadata,
   guessMetadataForAtlas,
 } from "../../shared/sibling-guess";
+import { useToast } from "../../shared/toast";
 import { usePrimaryAction } from "../../shared/use-primary-action";
 import { useAtlasUnpack } from "./state";
 
@@ -57,6 +59,31 @@ export function AtlasUnpackView() {
     !state.exporting;
 
   usePrimaryAction(canExport, () => void exportUnpack());
+
+  const toast = useToast();
+  const wasExportingRef = useRef(false);
+  useEffect(() => {
+    if (wasExportingRef.current && !state.exporting) {
+      if (state.lastExport) {
+        const total = state.lastExport.outputPaths.length;
+        const skipped = state.lastExport.skipped.length;
+        if (total > 0 && skipped === 0) {
+          toast.push({ type: "success", message: `拆分完成：${total} 个子图` });
+        } else if (total > 0 && skipped > 0) {
+          toast.push({
+            type: "warning",
+            message: `拆分完成：${total} 个，${skipped} 个跳过`,
+          });
+        } else {
+          toast.push({ type: "error", message: "没有子图被拆出来" });
+        }
+      } else if (state.lastError) {
+        toast.push({ type: "error", message: state.lastError });
+      }
+    }
+    wasExportingRef.current = state.exporting;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.exporting]);
 
   const summary = inspect
     ? `${FORMAT_LABEL[inspect.detectedFormat] || inspect.detectedFormat} · ${inspect.frames.length} 个子图`

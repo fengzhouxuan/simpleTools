@@ -4,10 +4,12 @@ import {
   formatSize,
   sumBy,
 } from "../../shared/format";
+import { useEffect, useRef } from "preact/hooks";
 import { FileImportZone } from "../../components/file-import";
 import { ResultList } from "../../components/result-list";
 import { ProgressBar } from "../../components/progress-bar";
 import { Spinner } from "../../components/spinner";
+import { useToast } from "../../shared/toast";
 import { usePrimaryAction } from "../../shared/use-primary-action";
 import { getQualityLevel, useCompressState } from "./state";
 import { PresetBar } from "./preset-bar";
@@ -71,6 +73,31 @@ export function CompressView() {
     (state.saveMode !== "custom" || Boolean(state.outputDir));
 
   usePrimaryAction(canRun, () => void runCompression());
+
+  // 跑完一批压缩弹 toast
+  const toast = useToast();
+  const wasRunningRef = useRef(false);
+  useEffect(() => {
+    if (wasRunningRef.current && !state.running && state.results.length > 0) {
+      const success = state.results.filter((r) => r.status === "done").length;
+      const failed = state.results.filter((r) => r.status === "failed").length;
+      if (failed === 0) {
+        toast.push({
+          type: "success",
+          message: `压缩完成：${success} 个文件，省了 ${(savedRatio * 100).toFixed(1)}%`,
+        });
+      } else if (success > 0) {
+        toast.push({
+          type: "warning",
+          message: `压缩完成：${success} 成功，${failed} 失败`,
+        });
+      } else {
+        toast.push({ type: "error", message: `${failed} 个文件全部失败` });
+      }
+    }
+    wasRunningRef.current = state.running;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.running]);
 
   const handlePickFiles = async () => {
     const picked = (await window.simpleImage.core.fs.pickFiles()).filter((f) => f.supported);
