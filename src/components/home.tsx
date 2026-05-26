@@ -39,6 +39,12 @@ const TOOL_CAPABILITIES: Partial<Record<ToolKey, string[]>> = {
     "自动 contain 缩放统一尺寸，差异阈值可调（消除 JPEG 噪声）",
     "调阈值时 350ms 防抖自动重算",
   ],
+  "batch-rename": [
+    "前缀 / 后缀 / 序号补零 / 正则替换 — 规则链式组合",
+    "实时 before → after 双列预览 + 冲突检测",
+    "两种模式：原地改名 / 复制到新目录改名",
+    "序号支持 1~6 位补零，位置可前可后",
+  ],
 };
 
 const WORKFLOWS: { title: string; steps: { tool: ToolKey; text: string }[] }[] = [

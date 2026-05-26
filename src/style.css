@@ -1696,6 +1696,66 @@ input[type="checkbox"] {
   line-height: 1.4;
 }
 
+/* ===== batch-rename: before → after 列表行 ===== */
+.rename-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1.4fr);
+  gap: 10px;
+  align-items: center;
+  padding: 6px 12px;
+  border-radius: var(--radius-nav);
+  font-size: 12px;
+  transition: background-color 80ms ease;
+}
+
+.rename-row:hover {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+:root[data-theme="dark"] .rename-row:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+@media (prefers-color-scheme: dark) {
+  .rename-row:hover {
+    background: rgba(255, 255, 255, 0.04);
+  }
+}
+
+.rename-from {
+  color: var(--text-tertiary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rename-arrow {
+  color: var(--text-tertiary);
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+.rename-to {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 500;
+}
+
+.rename-to.is-changed {
+  color: var(--accent);
+}
+
+.rename-to.is-unchanged {
+  color: var(--text-tertiary);
+  font-weight: 400;
+}
+
+.rename-to.is-conflict {
+  color: #ff3b30;
+  text-decoration: line-through wavy;
+}
+
 /* ===== image-diff 三列展示 ===== */
 .diff-triplet {
   display: grid;

@@ -5,7 +5,8 @@ export type ToolKey =
   | "atlas-incremental"
   | "atlas-unpack"
   | "icon-gen"
-  | "image-diff";
+  | "image-diff"
+  | "batch-rename";
 
 export type ToolStatus = "available" | "planned" | "workspace";
 
@@ -196,6 +197,51 @@ export type ImageDiffResult = {
   stats: ImageDiffStats;
   // diff 可视化 PNG 的 base64 data URI（不同处红色高亮，相同处保留 A 灰度）
   diffImageDataUri: string;
+};
+
+// ===== batch-rename =====
+
+export type BatchRenameRules = {
+  prefix: string;          // 添加前缀
+  suffix: string;          // 添加后缀（扩展名之前）
+  sequence: {              // 序号补零
+    enabled: boolean;
+    start: number;
+    digits: number;        // 补零位数
+    insertAt: "prefix" | "suffix"; // 序号加在前/后
+  };
+  regex: {                 // 正则查找替换（作用于文件名 stem，不含扩展名）
+    enabled: boolean;
+    pattern: string;       // 用户输入的字符串，主进程当作正则
+    flags: string;         // 例如 "g" / "gi"
+    replacement: string;   // 支持 $1 $2 等捕获组
+  };
+};
+
+export type BatchRenameInput = {
+  path: string;
+  name: string;
+};
+
+export type BatchRenameMode = "in-place" | "copy-to-dir";
+
+export type BatchRenamePayload = {
+  files: BatchRenameInput[];
+  rules: BatchRenameRules;
+  mode: BatchRenameMode;
+  outputDir: string;       // copy-to-dir 模式下用
+};
+
+export type BatchRenamePlanItem = {
+  from: string;            // 原绝对路径
+  to: string;              // 目标绝对路径（applyRules 后）
+  conflict: boolean;       // to 跟其他 item 重名 / 或目标文件已存在
+  unchanged: boolean;      // 改完跟 from 一样（没规则生效）
+};
+
+export type BatchRenameResult = {
+  succeeded: { from: string; to: string }[];
+  failed: { from: string; to: string; reason: string }[];
 };
 
 // ===== atlas-incremental =====

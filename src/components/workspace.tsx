@@ -7,6 +7,7 @@ import { AtlasIncrementalView } from "../tools/atlas-incremental/view";
 import { AtlasUnpackView } from "../tools/atlas-unpack/view";
 import { IconGenView } from "../tools/icon-gen/view";
 import { ImageDiffView } from "../tools/image-diff/view";
+import { BatchRenameView } from "../tools/batch-rename/view";
 import { toolMeta } from "../tools/tool-meta";
 
 function renderTool(currentTool: ReturnType<typeof useNavigation>["currentTool"]) {
@@ -25,6 +26,8 @@ function renderTool(currentTool: ReturnType<typeof useNavigation>["currentTool"]
       return <IconGenView />;
     case "image-diff":
       return <ImageDiffView />;
+    case "batch-rename":
+      return <BatchRenameView />;
   }
 }
 

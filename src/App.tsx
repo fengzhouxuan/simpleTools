@@ -6,6 +6,7 @@ import { AtlasUnpackProvider } from "./tools/atlas-unpack/state";
 import { AtlasIncrementalProvider } from "./tools/atlas-incremental/state";
 import { IconGenProvider } from "./tools/icon-gen/state";
 import { ImageDiffProvider } from "./tools/image-diff/state";
+import { BatchRenameProvider } from "./tools/batch-rename/state";
 import { ToolNav } from "./components/tool-nav";
 import { Workspace } from "./components/workspace";
 import { ThemeSwitcher } from "./components/theme-switcher";
@@ -33,6 +34,7 @@ export function App() {
         <AtlasIncrementalProvider>
         <IconGenProvider>
         <ImageDiffProvider>
+        <BatchRenameProvider>
         <main class="tuya-shell">
           <header class="tuya-titlebar">
             <strong>SimpleImageCompress</strong>
@@ -45,6 +47,7 @@ export function App() {
             </section>
           </div>
         </main>
+        </BatchRenameProvider>
         </ImageDiffProvider>
         </IconGenProvider>
         </AtlasIncrementalProvider>

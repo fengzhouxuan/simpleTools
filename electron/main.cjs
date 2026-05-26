@@ -10,6 +10,7 @@ const atlasUnpack = require("./tools/atlas-unpack.cjs");
 const atlasIncremental = require("./tools/atlas-incremental.cjs");
 const iconGen = require("./tools/icon-gen.cjs");
 const imageDiff = require("./tools/image-diff.cjs");
+const batchRename = require("./tools/batch-rename.cjs");
 
 // macOS 应用菜单：在系统 menubar 注册"工具"子菜单，每个工具一个快捷键
 // 触发时通过 webContents.send 把 toolKey 发给渲染层
@@ -21,6 +22,7 @@ const TOOL_MENU_ITEMS = [
   { label: "增量打包", tool: "atlas-incremental", accel: "CmdOrCtrl+5" },
   { label: "图标生成", tool: "icon-gen", accel: "CmdOrCtrl+6" },
   { label: "图片对比", tool: "image-diff", accel: "CmdOrCtrl+7" },
+  { label: "批量重命名", tool: "batch-rename", accel: "CmdOrCtrl+8" },
 ];
 
 function buildMenu(window) {
@@ -162,6 +164,7 @@ atlasUnpack.register(ipcMain);
 atlasIncremental.register(ipcMain);
 iconGen.register(ipcMain);
 imageDiff.register(ipcMain);
+batchRename.register(ipcMain);
 
 function createMainWindow() {
   createWindow();

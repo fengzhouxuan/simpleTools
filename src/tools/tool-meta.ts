@@ -42,6 +42,11 @@ export const toolMeta: Record<ToolKey, ToolMeta> = {
     status: "available",
     description: "两张图像素级比对，输出 diff 可视化与差异指标。",
   },
+  "batch-rename": {
+    label: "批量重命名",
+    status: "available",
+    description: "前缀 / 后缀 / 序号 / 正则替换 链式组合，before→after 实时预览。",
+  },
 };
 
 export const navToolOrder: ToolKey[] = [
@@ -52,6 +57,7 @@ export const navToolOrder: ToolKey[] = [
   "atlas-unpack",
   "icon-gen",
   "image-diff",
+  "batch-rename",
 ];
 
 export const homeToolOrder: ToolKey[] = [
@@ -61,4 +67,5 @@ export const homeToolOrder: ToolKey[] = [
   "atlas-unpack",
   "icon-gen",
   "image-diff",
+  "batch-rename",
 ];

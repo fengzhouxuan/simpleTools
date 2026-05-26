@@ -79,5 +79,14 @@ contextBridge.exposeInMainWorld("simpleImage", {
     imageDiff: {
       run: (payload) => ipcRenderer.invoke("tools:image-diff:run", payload),
     },
+    batchRename: {
+      preview: (payload) => ipcRenderer.invoke("tools:batch-rename:preview", payload),
+      execute: (payload) => ipcRenderer.invoke("tools:batch-rename:execute", payload),
+      onProgress: (callback) => {
+        const wrapped = (_e, payload) => callback(payload);
+        ipcRenderer.on("tools:batch-rename:progress", wrapped);
+        return () => ipcRenderer.off("tools:batch-rename:progress", wrapped);
+      },
+    },
   },
 });

@@ -15,6 +15,9 @@ import type {
   IconGenResult,
   ImageDiffPayload,
   ImageDiffResult,
+  BatchRenamePayload,
+  BatchRenamePlanItem,
+  BatchRenameResult,
   InputFile,
   TaskProgress,
 } from "./types";
@@ -100,6 +103,11 @@ declare global {
         };
         imageDiff: {
           run: (payload: ImageDiffPayload) => Promise<ImageDiffResult>;
+        };
+        batchRename: {
+          preview: (payload: BatchRenamePayload) => Promise<BatchRenamePlanItem[]>;
+          execute: (payload: BatchRenamePayload) => Promise<BatchRenameResult>;
+          onProgress: (callback: (p: TaskProgress) => void) => () => void;
         };
       };
     };
