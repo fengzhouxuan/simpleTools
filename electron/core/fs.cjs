@@ -134,6 +134,22 @@ async function pickSingleFile(filters) {
   return result.filePaths[0];
 }
 
+// 检查一组候选路径，返回第一个实际存在的文件路径（找不到返回 null）
+// 用于"猜测同目录同名"这类智能匹配
+async function firstExisting(paths) {
+  if (!Array.isArray(paths)) return null;
+  for (const p of paths) {
+    if (!p) continue;
+    try {
+      const stat = await fs.stat(p);
+      if (stat.isFile()) return p;
+    } catch {
+      // 不存在，继续
+    }
+  }
+  return null;
+}
+
 async function scanDirectory(dirPath) {
   return collectFromDirectory(dirPath);
 }
@@ -153,6 +169,7 @@ function register(ipcMain) {
   ipcMain.handle("core:fs:pick-files", () => pickFiles());
   ipcMain.handle("core:fs:pick-folder", () => pickFolder());
   ipcMain.handle("core:fs:pick-single-file", (_e, filters) => pickSingleFile(filters));
+  ipcMain.handle("core:fs:first-existing", (_e, paths) => firstExisting(paths));
   ipcMain.handle("core:fs:scan-directory", (_event, dirPath) => scanDirectory(dirPath));
   ipcMain.handle("core:fs:normalize-paths", (_event, paths) => normalizePaths(paths));
   ipcMain.handle("core:fs:open-path", (_event, filePath) => openPath(filePath));
@@ -170,6 +187,7 @@ module.exports = {
   pickFiles,
   pickFolder,
   pickSingleFile,
+  firstExisting,
   scanDirectory,
   openPath,
   revealInFolder,

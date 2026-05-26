@@ -1,4 +1,8 @@
 import { FileImportZone } from "../../components/file-import";
+import {
+  guessAtlasForMetadata,
+  guessMetadataForAtlas,
+} from "../../shared/sibling-guess";
 import { useAtlasIncremental } from "./state";
 
 function basename(p: string): string {
@@ -34,7 +38,9 @@ export function AtlasIncrementalView() {
       { name: "Atlas Image", extensions: ["png", "jpg", "jpeg", "webp"] },
     ]);
     if (!picked) return;
-    patch({ atlasPath: picked, manifestPath: "" });
+    // 自动找同目录同名元数据；用户已选过则不覆盖
+    const autoMetadata = state.metadataPath || (await guessMetadataForAtlas(picked)) || "";
+    patch({ atlasPath: picked, metadataPath: autoMetadata, manifestPath: "" });
   };
 
   const handlePickFallbackMetadata = async () => {
@@ -42,7 +48,9 @@ export function AtlasIncrementalView() {
       { name: "Atlas Metadata", extensions: ["plist", "json", "css"] },
     ]);
     if (!picked) return;
-    patch({ metadataPath: picked, manifestPath: "" });
+    // 反向猜：选了元数据但还没选 atlas，自动找同名图片
+    const autoAtlas = state.atlasPath || (await guessAtlasForMetadata(picked)) || "";
+    patch({ metadataPath: picked, atlasPath: autoAtlas, manifestPath: "" });
   };
 
   const handlePickFiles = async () => {

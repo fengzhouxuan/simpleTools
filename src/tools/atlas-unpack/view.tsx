@@ -1,3 +1,7 @@
+import {
+  guessAtlasForMetadata,
+  guessMetadataForAtlas,
+} from "../../shared/sibling-guess";
 import { useAtlasUnpack } from "./state";
 
 const FORMAT_LABEL: Record<string, string> = {
@@ -13,14 +17,6 @@ function basename(p: string): string {
   return idx >= 0 ? p.slice(idx + 1) : p;
 }
 
-// 选了 atlas 后，按"同目录同名"自动推断 metadata 路径
-function guessMetadataPath(atlasPath: string): string {
-  if (!atlasPath) return "";
-  const dot = atlasPath.lastIndexOf(".");
-  if (dot < 0) return "";
-  return atlasPath.slice(0, dot) + ".json";
-}
-
 export function AtlasUnpackView() {
   const { state, patch, clearSession, exportUnpack } = useAtlasUnpack();
   const { inspect } = state;
@@ -30,15 +26,19 @@ export function AtlasUnpackView() {
       { name: "Atlas Image", extensions: ["png", "jpg", "jpeg", "webp"] },
     ]);
     if (!picked) return;
-    const guess = state.metadataPath || guessMetadataPath(picked);
-    patch({ atlasPath: picked, metadataPath: guess });
+    // 自动猜元数据：同目录同名 + 候选扩展名 (.json/.plist/.css)，文件存在才填
+    const autoMetadata = state.metadataPath || (await guessMetadataForAtlas(picked)) || "";
+    patch({ atlasPath: picked, metadataPath: autoMetadata });
   };
 
   const handlePickMetadata = async () => {
     const picked = await window.simpleImage.core.fs.pickSingleFile([
       { name: "Atlas Metadata", extensions: ["plist", "json", "css"] },
     ]);
-    if (picked) patch({ metadataPath: picked });
+    if (!picked) return;
+    // 反向猜：选了元数据自动找同名 atlas 图片
+    const autoAtlas = state.atlasPath || (await guessAtlasForMetadata(picked)) || "";
+    patch({ metadataPath: picked, atlasPath: autoAtlas });
   };
 
   const handlePickOutput = async () => {

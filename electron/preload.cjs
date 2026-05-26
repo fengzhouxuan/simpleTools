@@ -6,6 +6,7 @@ contextBridge.exposeInMainWorld("simpleImage", {
       pickFiles: () => ipcRenderer.invoke("core:fs:pick-files"),
       pickFolder: () => ipcRenderer.invoke("core:fs:pick-folder"),
       pickSingleFile: (filters) => ipcRenderer.invoke("core:fs:pick-single-file", filters),
+      firstExisting: (paths) => ipcRenderer.invoke("core:fs:first-existing", paths),
       scanDirectory: (dirPath) => ipcRenderer.invoke("core:fs:scan-directory", dirPath),
       normalizePaths: (paths) => ipcRenderer.invoke("core:fs:normalize-paths", paths),
       openPath: (filePath) => ipcRenderer.invoke("core:fs:open-path", filePath),

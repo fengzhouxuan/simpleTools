@@ -24,6 +24,7 @@ declare global {
           pickSingleFile: (
             filters?: { name: string; extensions: string[] }[],
           ) => Promise<string | null>;
+          firstExisting: (paths: string[]) => Promise<string | null>;
           scanDirectory: (dirPath: string) => Promise<InputFile[]>;
           normalizePaths: (paths: string[]) => Promise<InputFile[]>;
           openPath: (filePath: string) => Promise<{ ok: boolean; error?: string }>;
