@@ -47,6 +47,9 @@ declare global {
           get: <T = unknown>(key: string, defaultValue?: T) => Promise<T>;
           set: (key: string, value: unknown) => Promise<boolean>;
         };
+        clipboard: {
+          writeText: (text: string) => Promise<{ ok: boolean; error?: string }>;
+        };
       };
       tools: {
         compress: {

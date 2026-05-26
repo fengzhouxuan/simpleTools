@@ -1,5 +1,6 @@
 import { FileImportZone } from "../../components/file-import";
 import { ProgressBar } from "../../components/progress-bar";
+import { CopyPathButton } from "../../components/copy-path-button";
 import { useAtlasPack } from "./state";
 import { AtlasPreview } from "./preview";
 import { AtlasPresetBar } from "./preset-bar";
@@ -266,7 +267,8 @@ export function AtlasPackView() {
               {state.lastExport.pageImagePaths.length} 张图集 +{" "}
               {state.lastExport.metadataPaths.length} 份元数据
             </span>
-            <span style={{ flex: 1 }} />
+            <span class="summary-spacer" />
+            <CopyPathButton text={state.lastExport.pageImagePaths[0]} />
             <button
               class="ghost-button"
               onClick={() => {

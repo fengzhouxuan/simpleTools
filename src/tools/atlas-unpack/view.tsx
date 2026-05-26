@@ -1,3 +1,4 @@
+import { CopyPathButton } from "../../components/copy-path-button";
 import {
   guessAtlasForMetadata,
   guessMetadataForAtlas,
@@ -178,6 +179,7 @@ export function AtlasUnpackView() {
                 : ""}
             </span>
             <span class="summary-spacer" />
+            <CopyPathButton text={state.lastExport.outputPaths[0] ?? ""} />
             <button
               class="ghost-button"
               onClick={() => {

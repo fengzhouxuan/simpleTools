@@ -1489,6 +1489,16 @@ input[type="checkbox"] {
   line-height: 1.4;
 }
 
+/* ===== icon-gen 源图拖拽区 ===== */
+.icon-source-drop {
+  transition: background-color 80ms ease, box-shadow 80ms ease;
+}
+
+.icon-source-drop.is-drag-over {
+  background: var(--accent-soft);
+  box-shadow: 0 0 0 1px var(--accent), var(--shadow-card);
+}
+
 /* ===== icon-gen 目标格式卡片 ===== */
 .icon-target-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));

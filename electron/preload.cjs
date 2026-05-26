@@ -20,6 +20,9 @@ contextBridge.exposeInMainWorld("simpleImage", {
       get: (key, defaultValue) => ipcRenderer.invoke("core:settings:get", key, defaultValue),
       set: (key, value) => ipcRenderer.invoke("core:settings:set", key, value),
     },
+    clipboard: {
+      writeText: (text) => ipcRenderer.invoke("core:clipboard:write-text", text),
+    },
   },
   tools: {
     compress: {

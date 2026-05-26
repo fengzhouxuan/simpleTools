@@ -1,4 +1,6 @@
+import { useState } from "preact/hooks";
 import { ProgressBar } from "../../components/progress-bar";
+import { CopyPathButton } from "../../components/copy-path-button";
 import type { IconExportTarget } from "../../shared/types";
 import { useIconGen } from "./state";
 
@@ -42,14 +44,51 @@ const TARGETS: TargetMeta[] = [
   },
 ];
 
+function extractFirstDroppedPath(event: DragEvent): string | null {
+  const uriList = event.dataTransfer?.getData("text/uri-list") ?? "";
+  const fromUri = uriList
+    .split("\n")
+    .map((s) => s.trim())
+    .find((s) => s.startsWith("file://"));
+  if (fromUri) {
+    try {
+      return decodeURIComponent(fromUri.replace("file://", ""));
+    } catch {
+      // fall through
+    }
+  }
+  const files = Array.from(event.dataTransfer?.files ?? []);
+  for (const f of files) {
+    const direct = (f as File & { path?: string }).path;
+    if (direct) return direct;
+    try {
+      const p = window.simpleImage.core.webUtils.getPathForFile(f);
+      if (p) return p;
+    } catch {
+      // ignore
+    }
+  }
+  return null;
+}
+
 export function IconGenView() {
   const { state, patch, toggleTarget, clearSession, runGenerate } = useIconGen();
+  const [dragOver, setDragOver] = useState(false);
 
   const handlePickSource = async () => {
     const picked = await window.simpleImage.core.fs.pickSingleFile([
       { name: "Source Image", extensions: ["png", "jpg", "jpeg", "webp"] },
     ]);
     if (picked) patch({ sourcePath: picked });
+  };
+
+  const handleSourceDrop = (e: DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
+    const p = extractFirstDroppedPath(e);
+    if (p && /\.(png|jpe?g|webp)$/i.test(p)) {
+      patch({ sourcePath: p });
+    }
   };
 
   const handlePickOutput = async () => {
@@ -83,7 +122,18 @@ export function IconGenView() {
       <div class="tuya-content">
         {/* 源图选择 */}
         <section class="settings-grid">
-          <div class="settings-card">
+          <div
+            class={`settings-card icon-source-drop ${dragOver ? "is-drag-over" : ""}`}
+            onDragEnter={(e) => {
+              e.preventDefault();
+              setDragOver(true);
+            }}
+            onDragOver={(e) => e.preventDefault()}
+            onDragLeave={(e) => {
+              if (e.currentTarget === e.target) setDragOver(false);
+            }}
+            onDrop={handleSourceDrop}
+          >
             <div class="option-block">
               <span class="option-label">源图（推荐 ≥ 1024×1024）</span>
               <button
@@ -93,7 +143,7 @@ export function IconGenView() {
                 {basename(state.sourcePath) || "选择源图 (PNG/JPG/WebP)..."}
               </button>
               <span class="param-hint">
-                透明背景的 PNG 效果最好；JPG 也支持，但会自动填充透明区
+                也可以直接拖入文件 · 透明背景 PNG 效果最佳，JPG 会自动填充透明区
               </span>
             </div>
           </div>
@@ -205,6 +255,7 @@ export function IconGenView() {
                 : ""}
             </span>
             <span class="summary-spacer" />
+            <CopyPathButton text={state.lastResult.outputPaths[0] ?? ""} />
             <button
               class="ghost-button"
               onClick={() => {

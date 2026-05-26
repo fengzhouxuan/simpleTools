@@ -1,5 +1,6 @@
 import { FileImportZone } from "../../components/file-import";
 import { ProgressBar } from "../../components/progress-bar";
+import { CopyPathButton } from "../../components/copy-path-button";
 import {
   guessAtlasForMetadata,
   guessMetadataForAtlas,
@@ -383,6 +384,7 @@ export function AtlasIncrementalView() {
               {state.lastExport.metadataPaths.length} 份元数据
             </span>
             <span class="summary-spacer" />
+            <CopyPathButton text={state.lastExport.pageImagePaths[0] ?? ""} />
             <button
               class="ghost-button"
               onClick={() => {

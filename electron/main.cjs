@@ -3,6 +3,7 @@ const fsSync = require("fs");
 const path = require("path");
 const core = require("./core/fs.cjs");
 const settings = require("./core/settings.cjs");
+const clipboard = require("./core/clipboard.cjs");
 const compress = require("./tools/compress.cjs");
 const atlasPack = require("./tools/atlas-pack.cjs");
 const atlasUnpack = require("./tools/atlas-unpack.cjs");
@@ -68,6 +69,7 @@ function createWindow() {
 
 core.register(ipcMain);
 settings.register(ipcMain);
+clipboard.register(ipcMain);
 compress.register(ipcMain);
 atlasPack.register(ipcMain);
 atlasUnpack.register(ipcMain);
