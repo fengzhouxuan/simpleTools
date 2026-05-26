@@ -61,6 +61,12 @@ const WORKFLOWS: { title: string; steps: { tool: ToolKey; text: string }[] }[] =
       { tool: "atlas-unpack", text: "选 atlas + 元数据 → 拆出全部子图" },
     ],
   },
+  {
+    title: "验证压缩 / 处理前后的差异",
+    steps: [
+      { tool: "image-diff", text: "选两张图 → 像素级 diff + 差异指标，看压缩损失或还原一致性" },
+    ],
+  },
 ];
 
 const APP_VERSION = "0.1.0";

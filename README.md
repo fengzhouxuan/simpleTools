@@ -2,6 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 [![Platform](https://img.shields.io/badge/platform-macOS%20arm64-blue.svg)](#mac-打包)
+[![CI](https://github.com/fengzhouxuan/simpleTools/actions/workflows/test.yml/badge.svg)](https://github.com/fengzhouxuan/simpleTools/actions/workflows/test.yml)
 
 SimpleImageCompress 当前是一个纯本地的桌面图片压缩工具原型，但产品最终目标不是“单一压图工具”，而是一个面向美术与资源处理流程的图像资产工具集合。
 
