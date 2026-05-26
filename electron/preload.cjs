@@ -1,6 +1,12 @@
 const { contextBridge, ipcRenderer, webUtils } = require("electron");
 
 contextBridge.exposeInMainWorld("simpleImage", {
+  // 主进程菜单 → 渲染层切工具
+  onNavigate: (callback) => {
+    const wrapped = (_e, tool) => callback(tool);
+    ipcRenderer.on("app:navigate", wrapped);
+    return () => ipcRenderer.off("app:navigate", wrapped);
+  },
   core: {
     fs: {
       pickFiles: () => ipcRenderer.invoke("core:fs:pick-files"),

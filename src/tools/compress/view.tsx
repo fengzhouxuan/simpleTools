@@ -7,6 +7,7 @@ import {
 import { FileImportZone } from "../../components/file-import";
 import { ResultList } from "../../components/result-list";
 import { ProgressBar } from "../../components/progress-bar";
+import { usePrimaryAction } from "../../shared/use-primary-action";
 import { getQualityLevel, useCompressState } from "./state";
 import { PresetBar } from "./preset-bar";
 
@@ -56,6 +57,8 @@ export function CompressView() {
     !state.running &&
     state.files.length > 0 &&
     (state.saveMode !== "custom" || Boolean(state.outputDir));
+
+  usePrimaryAction(canRun, () => void runCompression());
 
   const handlePickFiles = async () => {
     const picked = (await window.simpleImage.core.fs.pickFiles()).filter((f) => f.supported);

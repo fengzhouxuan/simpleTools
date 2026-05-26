@@ -1,6 +1,7 @@
 import { FileImportZone } from "../../components/file-import";
 import { ProgressBar } from "../../components/progress-bar";
 import { CopyPathButton } from "../../components/copy-path-button";
+import { usePrimaryAction } from "../../shared/use-primary-action";
 import { useAtlasPack } from "./state";
 import { AtlasPreview } from "./preview";
 import { AtlasPresetBar } from "./preset-bar";
@@ -45,6 +46,8 @@ export function AtlasPackView() {
 
   const canExport =
     hasInputs && !!state.outputDir && !state.exporting && !state.packing && !!result;
+
+  usePrimaryAction(canExport, () => void exportAtlas());
 
   const summary = result
     ? `${result.pages.length} 页 · 利用率 ${(result.totalUtilization * 100).toFixed(1)}% · 共 ${result.pages.reduce((s, p) => s + p.frames.length, 0)} 个子图`

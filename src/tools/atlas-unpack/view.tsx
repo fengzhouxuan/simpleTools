@@ -3,6 +3,7 @@ import {
   guessAtlasForMetadata,
   guessMetadataForAtlas,
 } from "../../shared/sibling-guess";
+import { usePrimaryAction } from "../../shared/use-primary-action";
 import { useAtlasUnpack } from "./state";
 
 const FORMAT_LABEL: Record<string, string> = {
@@ -53,6 +54,8 @@ export function AtlasUnpackView() {
     !!state.outputDir &&
     !!inspect &&
     !state.exporting;
+
+  usePrimaryAction(canExport, () => void exportUnpack());
 
   const summary = inspect
     ? `${FORMAT_LABEL[inspect.detectedFormat] || inspect.detectedFormat} · ${inspect.frames.length} 个子图`

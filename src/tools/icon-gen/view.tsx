@@ -1,6 +1,7 @@
 import { useState } from "preact/hooks";
 import { ProgressBar } from "../../components/progress-bar";
 import { CopyPathButton } from "../../components/copy-path-button";
+import { usePrimaryAction } from "../../shared/use-primary-action";
 import type { IconExportTarget } from "../../shared/types";
 import { useIconGen } from "./state";
 
@@ -101,6 +102,8 @@ export function IconGenView() {
     !!state.outputDir &&
     state.targets.length > 0 &&
     !state.running;
+
+  usePrimaryAction(canRun, () => void runGenerate());
 
   const summary = state.lastResult
     ? `${state.lastResult.outputPaths.length} 个文件已生成${

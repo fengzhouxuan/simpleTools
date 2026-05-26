@@ -5,6 +5,7 @@ import {
   guessAtlasForMetadata,
   guessMetadataForAtlas,
 } from "../../shared/sibling-guess";
+import { usePrimaryAction } from "../../shared/use-primary-action";
 import { AtlasPreview } from "../atlas-pack/preview";
 import { useAtlasIncremental } from "./state";
 
@@ -72,6 +73,8 @@ export function AtlasIncrementalView() {
 
   const oldLoaded = !!state.atlasPath && !!state.metadataPath;
   const canExport = oldLoaded && !!state.outputDir && !!diff && !state.exporting;
+
+  usePrimaryAction(canExport, () => void runExport());
 
   const summary = diff
     ? `+${diff.added.length} 改${diff.modified.length} 复用${diff.unchanged.length}${

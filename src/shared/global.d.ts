@@ -26,6 +26,9 @@ type AtlasIncrementalPreviewResult = {
 declare global {
   interface Window {
     simpleImage: {
+      onNavigate: (
+        callback: (tool: import("./types").ToolKey) => void,
+      ) => () => void;
       core: {
         fs: {
           pickFiles: () => Promise<InputFile[]>;
