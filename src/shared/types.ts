@@ -6,7 +6,8 @@ export type ToolKey =
   | "atlas-unpack"
   | "icon-gen"
   | "image-diff"
-  | "batch-rename";
+  | "batch-rename"
+  | "metadata-strip";
 
 export type ToolStatus = "available" | "planned" | "workspace";
 
@@ -243,6 +244,18 @@ export type BatchRenameResult = {
   succeeded: { from: string; to: string }[];
   failed: { from: string; to: string; reason: string }[];
 };
+
+// ===== metadata-strip =====
+
+export type MetadataStripPayload = {
+  files: InputFile[];
+  outputDir: string;
+  saveMode: SaveMode;
+  preserveColorProfile: boolean;  // 保留 ICC profile（避免色彩偏差）
+  preserveOrientation: boolean;   // 保留 EXIF 方向标记（避免图像翻转）
+};
+
+// 复用 CompressionResult 的字段语义（每个文件 done/failed + 前后大小）
 
 // ===== atlas-incremental =====
 

@@ -47,6 +47,11 @@ export const toolMeta: Record<ToolKey, ToolMeta> = {
     status: "available",
     description: "前缀 / 后缀 / 序号 / 正则替换 链式组合，before→after 实时预览。",
   },
+  "metadata-strip": {
+    label: "元数据剥离",
+    status: "available",
+    description: "批量去除 EXIF / GPS / IPTC / XMP 等隐私信息，可选保留色彩与方向。",
+  },
 };
 
 export const navToolOrder: ToolKey[] = [
@@ -58,6 +63,7 @@ export const navToolOrder: ToolKey[] = [
   "icon-gen",
   "image-diff",
   "batch-rename",
+  "metadata-strip",
 ];
 
 export const homeToolOrder: ToolKey[] = [
@@ -68,4 +74,5 @@ export const homeToolOrder: ToolKey[] = [
   "icon-gen",
   "image-diff",
   "batch-rename",
+  "metadata-strip",
 ];

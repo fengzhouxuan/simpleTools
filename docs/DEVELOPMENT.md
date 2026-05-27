@@ -81,7 +81,10 @@ SimpleImage/
 │     ├─ atlas-pack.cjs       # 图集打包：maxrects + sharp.composite + 4 种元数据
 │     ├─ atlas-unpack.cjs     # 图集拆分：解析元数据 + sharp.extract
 │     ├─ atlas-incremental.cjs# 增量打包（merge 模式 + tmpdir 缓存）
-│     └─ icon-gen.cjs         # 图标生成：iconutil / to-ico / 多尺寸 PNG
+│     ├─ icon-gen.cjs         # 图标生成：iconutil / to-ico / 多尺寸 PNG
+│     ├─ image-diff.cjs       # 像素级 diff，红色高亮 + 差异指标
+│     ├─ batch-rename.cjs     # 批量重命名：前缀 / 后缀 / 序号 / 正则
+│     └─ metadata-strip.cjs   # 元数据剥离：sharp 默认 strip 全部 + 可选保留 ICC/Orientation
 ├─ src/
 │  ├─ main.tsx                # Preact 渲染入口
 │  ├─ App.tsx                 # 根组件，承载多层 Provider + 整窗布局
@@ -115,7 +118,10 @@ SimpleImage/
 │  │  ├─ atlas-pack/          # 图集打包（含实时预览 canvas）
 │  │  ├─ atlas-unpack/        # 图集拆分
 │  │  ├─ atlas-incremental/   # 增量打包（merge 模式）
-│  │  └─ icon-gen/            # 图标生成
+│  │  ├─ icon-gen/            # 图标生成
+│  │  ├─ image-diff/          # 图片对比（像素级 diff）
+│  │  ├─ batch-rename/        # 批量重命名
+│  │  └─ metadata-strip/      # 元数据剥离（EXIF/GPS/IPTC/XMP）
 │  └─ assets/
 ├─ scripts/
 │  └─ generate-icons.mjs      # 生成应用本身的 icon.icns
@@ -323,6 +329,16 @@ npm run dist:mac
   - `pwa`：3 张 PNG（192/512/1024）
   - 所有 sharp.resize 用 `fit: "contain"` + 透明背景，保证图标比例不变形
 
+- [electron/tools/metadata-strip.cjs](/Users/wepie/Documents/Github/SimpleImage/electron/tools/metadata-strip.cjs)
+  元数据剥离工具，注册 `tools:metadata-strip:run`：
+  - `buildMetadataOptions(meta, opts)` 纯函数：根据 `preserveOrientation` 决定是否往 `sharp.withMetadata({ orientation })` 传值（原图没 orientation 时不无中生有）
+  - 两个开关都关 → 不调 `withMetadata` → sharp 默认 strip 全部元数据
+  - 任一开关开 → 调 `withMetadata`：sharp 默认在调用时保留 ICC profile（如果原图有），用 `orientation` 字段控制 EXIF 方向标记
+  - 输出格式 = 输入格式（不做格式转换；要转格式去 compress 工具）：JPG 走 `mozjpeg + quality 95`，PNG 走 `compressionLevel 9`，WebP 走 `quality 95`，GIF 走 `effort 7 + reuse`
+  - 覆盖原文件模式：先写 `.tmp-strip` 临时文件再 `fs.rename`，避免 sharp 边读边写同文件
+  - `mapConcurrent` 4 worker 并发，进度按完成数推送
+  - 单元测试覆盖 `buildMetadataOptions` 的 4 个开关组合 + `SUPPORTED_EXT` 集合
+
 - [electron/tools/atlas-incremental.cjs](/Users/wepie/Documents/Github/SimpleImage/electron/tools/atlas-incremental.cjs)
   图集增量打包（merge 模式）：
   - 输入：旧 atlas 图片 + 旧元数据（plist/json/css）+ 想加/改的散图
@@ -348,6 +364,10 @@ npm run dist:mac
 - `tools.atlasIncremental.preview(payload)` — 算 diff + packResult，给前端预览用（拆图带缓存）
 - `tools.atlasIncremental.export(payload)` — merge + 全量重打写盘
 - `tools.iconGen.run(payload)` — 一张大图 → 多目标图标集
+- `tools.imageDiff.run(payload)` — 两张图像素级对比
+- `tools.batchRename.preview(payload)` — 算 plan 给前端预览
+- `tools.batchRename.execute(payload)` — 应用规则改名
+- `tools.metadataStrip.run(payload)` — 批量剥离元数据
 
 新增工具的能力时遵循这条链路：
 

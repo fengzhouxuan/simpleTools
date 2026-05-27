@@ -8,6 +8,7 @@ import { AtlasUnpackView } from "../tools/atlas-unpack/view";
 import { IconGenView } from "../tools/icon-gen/view";
 import { ImageDiffView } from "../tools/image-diff/view";
 import { BatchRenameView } from "../tools/batch-rename/view";
+import { MetadataStripView } from "../tools/metadata-strip/view";
 import { toolMeta } from "../tools/tool-meta";
 
 function renderTool(currentTool: ReturnType<typeof useNavigation>["currentTool"]) {
@@ -28,6 +29,8 @@ function renderTool(currentTool: ReturnType<typeof useNavigation>["currentTool"]
       return <ImageDiffView />;
     case "batch-rename":
       return <BatchRenameView />;
+    case "metadata-strip":
+      return <MetadataStripView />;
   }
 }
 

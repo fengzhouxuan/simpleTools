@@ -93,5 +93,13 @@ contextBridge.exposeInMainWorld("simpleImage", {
         return () => ipcRenderer.off("tools:batch-rename:progress", wrapped);
       },
     },
+    metadataStrip: {
+      run: (payload) => ipcRenderer.invoke("tools:metadata-strip:run", payload),
+      onProgress: (callback) => {
+        const wrapped = (_e, payload) => callback(payload);
+        ipcRenderer.on("tools:metadata-strip:progress", wrapped);
+        return () => ipcRenderer.off("tools:metadata-strip:progress", wrapped);
+      },
+    },
   },
 });

@@ -4,7 +4,7 @@
 
 ## 已完成
 
-### 工具（7 个）
+### 工具（8 个）
 - compress（图片压缩，预设 + GIF 优化）
 - atlas-pack（图集打包，MaxRects + 4 种元数据 + 实时预览）
 - atlas-unpack（图集拆分）
@@ -12,6 +12,7 @@
 - icon-gen（macOS / Windows / Web / PWA 全套）
 - image-diff（像素级 diff + 差异指标）
 - batch-rename（前缀 / 后缀 / 序号 / 正则）
+- metadata-strip（剥离 EXIF / GPS / IPTC / XMP，可选保留 ICC + Orientation）
 
 ### 基础设施
 - Preact + Context/Reducer 状态管理
@@ -21,12 +22,12 @@
 - macOS Settings 风格 UI（vibrancy + 主题切换）
 - ErrorBoundary 隔离工具崩溃
 - Toast 通知 + ARIA 可访问性
-- 应用菜单 + 全局快捷键（Cmd+1~8 切工具 / Cmd+Enter 主操作）
+- 应用菜单 + 全局快捷键（Cmd+1~9 切工具 / Cmd+Enter 主操作）
 - 输出目录 / 主题持久化（userData/settings.json）
 - Motion polish（切换 fade-in / 按下感 / hover lift）+ reduce-motion 尊重
 
 ### 工程基础设施
-- 59 个 vitest 单元测试覆盖关键纯函数（含 concurrent helper）
+- 67 个 vitest 单元测试覆盖关键纯函数（含 concurrent helper + metadata-strip 选项构造）
 - GitHub Actions CI（push/PR 自动跑 test + build）
 - MIT 协议 + LGPL libvips 归属（THIRD_PARTY_NOTICES）
 - 三份文档：README（产品）/ USAGE（用户）/ DEVELOPMENT（开发者）/ ROADMAP（路线）
@@ -47,6 +48,7 @@
 ### 中价值
 - **首次启动引导（onboarding tour）**：首次打开高亮各工具卡片 + 示范工作流
 - **设置中心**：当前主题在标题栏、输出目录散在各工具，可以聚合到一个"设置"页
+- **metadata-strip CLI 化**：当前未提供，但工具结构简单，CLI 加起来快（payload 只有 files / saveMode / 2 个保留开关）
 - **atlas-incremental CLI 化**：当前 CLI 跳过它，因为依赖拆图缓存。要 CLI 化需要把缓存做成 disk-based 或每次重拆
 
 ### 小价值（拾遗）

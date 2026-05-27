@@ -45,6 +45,12 @@ const TOOL_CAPABILITIES: Partial<Record<ToolKey, string[]>> = {
     "两种模式：原地改名 / 复制到新目录改名",
     "序号支持 1~6 位补零，位置可前可后",
   ],
+  "metadata-strip": [
+    "去 EXIF / GPS / IPTC / XMP 等隐私信息",
+    "可选保留 ICC profile（不偏色）与 Orientation（不翻转）",
+    "JPG 走 mozjpeg 重编码 + 95 质量，肉眼几乎无损",
+    "支持 JPG / PNG / WebP / GIF；原文件夹 / 覆盖 / 自定义三种保存策略",
+  ],
 };
 
 const WORKFLOWS: { title: string; steps: { tool: ToolKey; text: string }[] }[] = [
@@ -85,6 +91,13 @@ const WORKFLOWS: { title: string; steps: { tool: ToolKey; text: string }[] }[] =
     title: "生成应用图标",
     steps: [
       { tool: "icon-gen", text: "一张大图 → macOS .icns / Windows .ico / Web favicon / PWA 全套" },
+    ],
+  },
+  {
+    title: "对外发图前去隐私",
+    steps: [
+      { tool: "metadata-strip", text: "去除 EXIF / GPS / IPTC / XMP 等元数据，避免泄露拍摄设备与位置" },
+      { tool: "compress", text: "需要的话再压一道减体积" },
     ],
   },
 ];

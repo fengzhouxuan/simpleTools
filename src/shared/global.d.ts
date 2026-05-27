@@ -18,7 +18,9 @@ import type {
   BatchRenamePayload,
   BatchRenamePlanItem,
   BatchRenameResult,
+  CompressionResult,
   InputFile,
+  MetadataStripPayload,
   TaskProgress,
 } from "./types";
 
@@ -108,6 +110,10 @@ declare global {
         batchRename: {
           preview: (payload: BatchRenamePayload) => Promise<BatchRenamePlanItem[]>;
           execute: (payload: BatchRenamePayload) => Promise<BatchRenameResult>;
+          onProgress: (callback: (p: TaskProgress) => void) => () => void;
+        };
+        metadataStrip: {
+          run: (payload: MetadataStripPayload) => Promise<CompressionResult[]>;
           onProgress: (callback: (p: TaskProgress) => void) => () => void;
         };
       };
