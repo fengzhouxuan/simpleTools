@@ -7,6 +7,19 @@ import { formatPath, formatRatio } from "../../shared/format";
 import { useNineSliceCrop } from "./state";
 import type { PreviewMode } from "./state";
 import { NineSliceEditor } from "./editor";
+import type { NineSliceInsets } from "../../shared/types";
+
+type TemplateKind = "9slice" | "3h" | "3v";
+
+// 根据当前 insets 反推用了哪个模板（用户拖辅助线后 != 任一模板就显示 "custom"）
+function deriveTemplate(i: NineSliceInsets): TemplateKind | null {
+  const { l, t, r, b } = i;
+  if (l + t + r + b === 0) return null;
+  if (l > 0 && t > 0 && r > 0 && b > 0 && l === r && t === b) return "9slice";
+  if (l > 0 && r > 0 && l === r && t === 0 && b === 0) return "3h";
+  if (t > 0 && b > 0 && t === b && l === 0 && r === 0) return "3v";
+  return null;
+}
 
 // 跟 atlas-preview / editor 同款 file:// 路径编码
 function pathToFileUrl(p: string): string {
@@ -50,6 +63,7 @@ export function NineSliceCropView() {
   const sumInset =
     state.insets.l + state.insets.t + state.insets.r + state.insets.b;
   const hasAnyInset = sumInset > 0;
+  const activeTemplate = deriveTemplate(state.insets);
 
   const canExport =
     hasSource &&
@@ -106,9 +120,10 @@ export function NineSliceCropView() {
     if (!state.source) return;
     const w = state.source.width;
     const h = state.source.height;
-    // 默认推荐：边缘 12% 或者 12px，取小
-    const sideX = Math.max(1, Math.min(12, Math.floor(w * 0.12)));
-    const sideY = Math.max(1, Math.min(12, Math.floor(h * 0.12)));
+    // 默认推荐：尺寸的 12%，下限 8px（避免极小图归零），上限 96px（避免极大图喧宾夺主）
+    // 在 750×956 这种典型 UI 资源上 → sideX=90 / sideY=114，模板按下立即能看到 4 个角
+    const sideX = Math.max(8, Math.min(96, Math.floor(w * 0.12)));
+    const sideY = Math.max(8, Math.min(96, Math.floor(h * 0.12)));
     switch (kind) {
       case "9slice":
         patchInsets({ l: sideX, t: sideY, r: sideX, b: sideY });
@@ -228,25 +243,28 @@ export function NineSliceCropView() {
                 换一张
               </button>
               <button
-                class="action-button action-secondary"
+                class={`action-button action-secondary ${activeTemplate === "9slice" ? "is-active" : ""}`}
                 onClick={() => applyTemplate("9slice")}
                 disabled={!hasSource}
+                title="4 个 inset 都设值，4 角不变形（圆角对话框 / 面板 / 按钮）"
               >
-                9-slice 模板
+                9-slice
               </button>
               <button
-                class="action-button action-secondary"
+                class={`action-button action-secondary ${activeTemplate === "3h" ? "is-active" : ""}`}
                 onClick={() => applyTemplate("3h")}
                 disabled={!hasSource}
+                title="L=R 设值，T=B=0：左右两端不变形 ↔ 中间水平拉伸（按钮 / 水平进度条）"
               >
-                3-slice 横
+                横向 3-slice
               </button>
               <button
-                class="action-button action-secondary"
+                class={`action-button action-secondary ${activeTemplate === "3v" ? "is-active" : ""}`}
                 onClick={() => applyTemplate("3v")}
                 disabled={!hasSource}
+                title="T=B 设值，L=R=0：上下两端不变形 ↕ 中间垂直拉伸（竖直滚动条 / 侧边）"
               >
-                3-slice 竖
+                竖向 3-slice
               </button>
             </div>
             <div class="action-meta">

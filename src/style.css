@@ -1126,6 +1126,18 @@ input[type="checkbox"] {
   background: var(--surface-card-hover);
 }
 
+/* 模板按钮选中状态：跟 action-primary 同款的强调色，让用户清楚知道当前用的哪个模板 */
+.action-secondary.is-active {
+  color: #fff;
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.action-secondary.is-active:hover:not(:disabled) {
+  background: var(--accent);
+  filter: brightness(0.95);
+}
+
 .action-meta {
   display: flex;
   gap: 12px;
