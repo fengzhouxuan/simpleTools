@@ -12,6 +12,7 @@ const iconGen = require("./tools/icon-gen.cjs");
 const imageDiff = require("./tools/image-diff.cjs");
 const batchRename = require("./tools/batch-rename.cjs");
 const metadataStrip = require("./tools/metadata-strip.cjs");
+const nineSliceCrop = require("./tools/nine-slice-crop.cjs");
 
 // macOS 应用菜单：在系统 menubar 注册"工具"子菜单，每个工具一个快捷键
 // 触发时通过 webContents.send 把 toolKey 发给渲染层
@@ -25,6 +26,8 @@ const TOOL_MENU_ITEMS = [
   { label: "图片对比", tool: "image-diff", accel: "CmdOrCtrl+7" },
   { label: "批量重命名", tool: "batch-rename", accel: "CmdOrCtrl+8" },
   { label: "元数据剥离", tool: "metadata-strip", accel: "CmdOrCtrl+9" },
+  // 第 10 个工具没有数字快捷键（Cmd+0 是系统 reset-zoom）
+  { label: "九宫格裁切", tool: "nine-slice-crop", accel: null },
 ];
 
 function buildMenu(window) {
@@ -68,7 +71,7 @@ function buildMenu(window) {
       label: "工具",
       submenu: TOOL_MENU_ITEMS.map((item) => ({
         label: item.label,
-        accelerator: item.accel,
+        ...(item.accel ? { accelerator: item.accel } : {}),
         click: () => sendNavigate(item.tool),
       })),
     },
@@ -168,6 +171,7 @@ iconGen.register(ipcMain);
 imageDiff.register(ipcMain);
 batchRename.register(ipcMain);
 metadataStrip.register(ipcMain);
+nineSliceCrop.register(ipcMain);
 
 function createMainWindow() {
   createWindow();

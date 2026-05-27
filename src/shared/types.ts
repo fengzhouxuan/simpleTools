@@ -7,7 +7,8 @@ export type ToolKey =
   | "icon-gen"
   | "image-diff"
   | "batch-rename"
-  | "metadata-strip";
+  | "metadata-strip"
+  | "nine-slice-crop";
 
 export type ToolStatus = "available" | "planned" | "workspace";
 
@@ -256,6 +257,62 @@ export type MetadataStripPayload = {
 };
 
 // 复用 CompressionResult 的字段语义（每个文件 done/failed + 前后大小）
+
+// ===== nine-slice-crop =====
+
+// 4 个 inset 都可以独立为 0：
+//   L=R=0 → 只切横条（3-slice 竖向）
+//   T=B=0 → 只切竖条（3-slice 横向）
+//   L=R=T=B=0 → 退化为整图（无意义）
+export type NineSliceInsets = {
+  l: number;
+  t: number;
+  r: number;
+  b: number;
+};
+
+// stretch = 中心拉伸（默认，CSS border-image 默认行为）
+// tile = 中心平铺（适合纹理图案）
+// 第一期裁切策略两者一样（中心 keep 1px），区别在元数据里给引擎读
+export type NineSliceCenterStrategy = "stretch" | "tile";
+
+export type NineSliceCropPayload = {
+  sourcePath: string;
+  insets: NineSliceInsets;
+  centerKeep: { x: number; y: number }; // 中心保留像素（≥1，通常 1~2）
+  center: NineSliceCenterStrategy;
+  outputDir: string;
+  outputName: string; // 文件名 stem，最终生成 <stem>.png + <stem>.9slice.json
+};
+
+export type NineSliceCropResult = {
+  croppedImagePath: string;
+  metadataPath: string;
+  originalSize: { w: number; h: number };
+  outputSize: { w: number; h: number };
+  savedRatio: number; // 1 - outputArea/originalArea
+};
+
+export type NineSliceAnalyzePayload = {
+  sourcePath: string;
+  insets: NineSliceInsets;
+  centerKeep: { x: number; y: number };
+};
+
+export type NineSliceAnalyzeResult = {
+  originalSize: { w: number; h: number };
+  outputSize: { w: number; h: number };
+  savedRatio: number;
+  restoreError: {
+    diffPixels: number;
+    totalPixels: number;
+    diffRatio: number;
+    maxDelta: number;
+    avgDelta: number;
+  };
+  diffImageDataUri: string; // 还原图 vs 原图 的 diff 可视化
+  restoredImageDataUri: string; // 还原后整图 base64（用于预览切换）
+};
 
 // ===== atlas-incremental =====
 

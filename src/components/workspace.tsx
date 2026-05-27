@@ -9,6 +9,7 @@ import { IconGenView } from "../tools/icon-gen/view";
 import { ImageDiffView } from "../tools/image-diff/view";
 import { BatchRenameView } from "../tools/batch-rename/view";
 import { MetadataStripView } from "../tools/metadata-strip/view";
+import { NineSliceCropView } from "../tools/nine-slice-crop/view";
 import { toolMeta } from "../tools/tool-meta";
 
 function renderTool(currentTool: ReturnType<typeof useNavigation>["currentTool"]) {
@@ -31,6 +32,8 @@ function renderTool(currentTool: ReturnType<typeof useNavigation>["currentTool"]
       return <BatchRenameView />;
     case "metadata-strip":
       return <MetadataStripView />;
+    case "nine-slice-crop":
+      return <NineSliceCropView />;
   }
 }
 

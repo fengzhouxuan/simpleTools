@@ -52,6 +52,11 @@ export const toolMeta: Record<ToolKey, ToolMeta> = {
     status: "available",
     description: "批量去除 EXIF / GPS / IPTC / XMP 等隐私信息，可选保留色彩与方向。",
   },
+  "nine-slice-crop": {
+    label: "九宫格裁切",
+    status: "available",
+    description: "大图按 9-slice 切分 → 裁掉中间冗余 → 输出最小代表小图 + 元数据。",
+  },
 };
 
 export const navToolOrder: ToolKey[] = [
@@ -64,6 +69,7 @@ export const navToolOrder: ToolKey[] = [
   "image-diff",
   "batch-rename",
   "metadata-strip",
+  "nine-slice-crop",
 ];
 
 export const homeToolOrder: ToolKey[] = [
@@ -75,4 +81,5 @@ export const homeToolOrder: ToolKey[] = [
   "image-diff",
   "batch-rename",
   "metadata-strip",
+  "nine-slice-crop",
 ];

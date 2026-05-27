@@ -4,7 +4,7 @@
 
 ## 已完成
 
-### 工具（8 个）
+### 工具（9 个）
 - compress（图片压缩，预设 + GIF 优化）
 - atlas-pack（图集打包，MaxRects + 4 种元数据 + 实时预览）
 - atlas-unpack（图集拆分）
@@ -13,6 +13,7 @@
 - image-diff（像素级 diff + 差异指标）
 - batch-rename（前缀 / 后缀 / 序号 / 正则）
 - metadata-strip（剥离 EXIF / GPS / IPTC / XMP，可选保留 ICC + Orientation）
+- nine-slice-crop（大图按 9-slice 裁掉中间冗余，4 个 inset 独立可为 0 自动支持 3-slice）
 
 ### 基础设施
 - Preact + Context/Reducer 状态管理
@@ -27,7 +28,7 @@
 - Motion polish（切换 fade-in / 按下感 / hover lift）+ reduce-motion 尊重
 
 ### 工程基础设施
-- 67 个 vitest 单元测试覆盖关键纯函数（含 concurrent helper + metadata-strip 选项构造）
+- 89 个 vitest 单元测试覆盖关键纯函数（含 concurrent helper + metadata-strip 选项构造 + nine-slice-crop 4 个核心算法）
 - GitHub Actions CI（push/PR 自动跑 test + build）
 - MIT 协议 + LGPL libvips 归属（THIRD_PARTY_NOTICES）
 - 三份文档：README（产品）/ USAGE（用户）/ DEVELOPMENT（开发者）/ ROADMAP（路线）
@@ -48,7 +49,9 @@
 ### 中价值
 - **首次启动引导（onboarding tour）**：首次打开高亮各工具卡片 + 示范工作流
 - **设置中心**：当前主题在标题栏、输出目录散在各工具，可以聚合到一个"设置"页
+- **快捷键重新规划**：第 10 个工具（nine-slice-crop）没有 Cmd+N 数字键（Cmd+0 是系统级 reset-zoom）；可考虑改用 Cmd+Shift+1..N 重新整体分配
 - **metadata-strip CLI 化**：当前未提供，但工具结构简单，CLI 加起来快（payload 只有 files / saveMode / 2 个保留开关）
+- **nine-slice-crop atlas-pack 联动**：让 atlas-pack 自动扫描同目录的 .9slice.json，把 insets 写到图集元数据 → 引擎一次拿全
 - **atlas-incremental CLI 化**：当前 CLI 跳过它，因为依赖拆图缓存。要 CLI 化需要把缓存做成 disk-based 或每次重拆
 
 ### 小价值（拾遗）

@@ -21,6 +21,10 @@ import type {
   CompressionResult,
   InputFile,
   MetadataStripPayload,
+  NineSliceAnalyzePayload,
+  NineSliceAnalyzeResult,
+  NineSliceCropPayload,
+  NineSliceCropResult,
   TaskProgress,
 } from "./types";
 
@@ -115,6 +119,14 @@ declare global {
         metadataStrip: {
           run: (payload: MetadataStripPayload) => Promise<CompressionResult[]>;
           onProgress: (callback: (p: TaskProgress) => void) => () => void;
+        };
+        nineSliceCrop: {
+          analyze: (
+            payload: NineSliceAnalyzePayload,
+          ) => Promise<NineSliceAnalyzeResult>;
+          export: (
+            payload: NineSliceCropPayload,
+          ) => Promise<NineSliceCropResult>;
         };
       };
     };

@@ -2358,6 +2358,222 @@ select:focus-visible {
   font-weight: 600;
 }
 
+/* ===== nine-slice-crop ===== */
+
+.nine-slice-stage {
+  flex: 1 1 auto;
+  min-height: 360px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  border-radius: 8px;
+  background: var(--surface-card);
+  padding: 12px;
+}
+
+.nine-slice-stage.is-empty {
+  grid-template-columns: 1fr;
+  align-items: center;
+  justify-content: center;
+}
+
+.nine-slice-editor-wrap,
+.nine-slice-preview-wrap {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+}
+
+.nine-slice-svg {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  background:
+    linear-gradient(45deg, #f5f5f7 25%, transparent 25%) 0 0 / 16px 16px,
+    linear-gradient(-45deg, #f5f5f7 25%, transparent 25%) 0 8px / 16px 16px,
+    linear-gradient(45deg, transparent 75%, #f5f5f7 75%) 8px -8px / 16px 16px,
+    linear-gradient(-45deg, transparent 75%, #f5f5f7 75%) 8px 0 / 16px 16px,
+    #e7e7eb;
+  border-radius: 4px;
+  outline: none;
+  cursor: default;
+}
+
+@media (prefers-color-scheme: dark) {
+  .nine-slice-svg {
+    background:
+      linear-gradient(45deg, rgba(255, 255, 255, 0.04) 25%, transparent 25%) 0 0 / 16px 16px,
+      linear-gradient(-45deg, rgba(255, 255, 255, 0.04) 25%, transparent 25%) 0 8px / 16px 16px,
+      linear-gradient(45deg, transparent 75%, rgba(255, 255, 255, 0.04) 75%) 8px -8px / 16px 16px,
+      linear-gradient(-45deg, transparent 75%, rgba(255, 255, 255, 0.04) 75%) 8px 0 / 16px 16px,
+      #1f1f23;
+  }
+}
+
+:root[data-theme="dark"] .nine-slice-svg {
+  background:
+    linear-gradient(45deg, rgba(255, 255, 255, 0.04) 25%, transparent 25%) 0 0 / 16px 16px,
+    linear-gradient(-45deg, rgba(255, 255, 255, 0.04) 25%, transparent 25%) 0 8px / 16px 16px,
+    linear-gradient(45deg, transparent 75%, rgba(255, 255, 255, 0.04) 75%) 8px -8px / 16px 16px,
+    linear-gradient(-45deg, transparent 75%, rgba(255, 255, 255, 0.04) 75%) 8px 0 / 16px 16px,
+    #1f1f23;
+}
+
+/* 区域高亮：4 角不变形 / 4 边带可压缩 / 中心可拉伸 */
+.nine-slice-corner {
+  fill: rgba(52, 199, 89, 0.18); /* 绿 = 不变形 */
+  stroke: rgba(52, 199, 89, 0.5);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+}
+
+.nine-slice-band {
+  fill: rgba(255, 149, 0, 0.15); /* 橙 = 单方向可压缩 */
+  stroke: rgba(255, 149, 0, 0.4);
+  stroke-width: 0.5;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+}
+
+.nine-slice-center {
+  fill: rgba(255, 59, 48, 0.15); /* 红 = 整块可压缩到 1px */
+  stroke: rgba(255, 59, 48, 0.45);
+  stroke-width: 0.5;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+}
+
+/* 辅助线 */
+.guide-line {
+  stroke: var(--accent);
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+}
+
+.nine-slice-guide.is-active .guide-line {
+  stroke: #ff3b30;
+  stroke-width: 2;
+}
+
+.guide-hit {
+  fill: transparent;
+  cursor: grab;
+  outline: none;
+}
+
+.guide-hit:active {
+  cursor: grabbing;
+}
+
+.guide-hit:focus {
+  fill: rgba(0, 122, 255, 0.06);
+}
+
+/* 预览侧 */
+.nine-slice-preview-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 8px;
+  padding: 3px;
+  border-radius: var(--radius-control);
+  background: rgba(0, 0, 0, 0.04);
+  align-self: flex-start;
+}
+
+@media (prefers-color-scheme: dark) {
+  .nine-slice-preview-tabs {
+    background: rgba(255, 255, 255, 0.06);
+  }
+}
+
+:root[data-theme="dark"] .nine-slice-preview-tabs {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.nine-slice-preview-canvas {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  overflow: hidden;
+  background:
+    linear-gradient(45deg, #f5f5f7 25%, transparent 25%) 0 0 / 16px 16px,
+    linear-gradient(-45deg, #f5f5f7 25%, transparent 25%) 0 8px / 16px 16px,
+    linear-gradient(45deg, transparent 75%, #f5f5f7 75%) 8px -8px / 16px 16px,
+    linear-gradient(-45deg, transparent 75%, #f5f5f7 75%) 8px 0 / 16px 16px,
+    #e7e7eb;
+}
+
+@media (prefers-color-scheme: dark) {
+  .nine-slice-preview-canvas {
+    background:
+      linear-gradient(45deg, rgba(255, 255, 255, 0.04) 25%, transparent 25%) 0 0 / 16px 16px,
+      linear-gradient(-45deg, rgba(255, 255, 255, 0.04) 25%, transparent 25%) 0 8px / 16px 16px,
+      linear-gradient(45deg, transparent 75%, rgba(255, 255, 255, 0.04) 75%) 8px -8px / 16px 16px,
+      linear-gradient(-45deg, transparent 75%, rgba(255, 255, 255, 0.04) 75%) 8px 0 / 16px 16px,
+      #1f1f23;
+  }
+}
+
+:root[data-theme="dark"] .nine-slice-preview-canvas {
+  background:
+    linear-gradient(45deg, rgba(255, 255, 255, 0.04) 25%, transparent 25%) 0 0 / 16px 16px,
+    linear-gradient(-45deg, rgba(255, 255, 255, 0.04) 25%, transparent 25%) 0 8px / 16px 16px,
+    linear-gradient(45deg, transparent 75%, rgba(255, 255, 255, 0.04) 75%) 8px -8px / 16px 16px,
+    linear-gradient(-45deg, transparent 75%, rgba(255, 255, 255, 0.04) 75%) 8px 0 / 16px 16px,
+    #1f1f23;
+}
+
+.nine-slice-preview-img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  image-rendering: pixelated; /* 小图放大不模糊 — 让用户看清像素结构 */
+}
+
+.nine-slice-preview-placeholder {
+  color: var(--text-tertiary);
+  font-size: 12px;
+}
+
+.nine-slice-canvas-meta {
+  margin-top: 8px;
+  text-align: center;
+  color: var(--text-tertiary);
+  font-size: 11px;
+}
+
+/* 还原误差 badge：3 级颜色 */
+.nine-slice-error-badge {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.nine-slice-error-badge.is-safe {
+  background: rgba(52, 199, 89, 0.16);
+  color: #2ea043;
+}
+
+.nine-slice-error-badge.is-warn {
+  background: rgba(255, 149, 0, 0.18);
+  color: #c97a00;
+}
+
+.nine-slice-error-badge.is-danger {
+  background: rgba(255, 59, 48, 0.18);
+  color: #d63a31;
+}
+
 /* ===== 拖动区域排除 ===== */
 
 .action-button,

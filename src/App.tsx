@@ -8,6 +8,7 @@ import { IconGenProvider } from "./tools/icon-gen/state";
 import { ImageDiffProvider } from "./tools/image-diff/state";
 import { BatchRenameProvider } from "./tools/batch-rename/state";
 import { MetadataStripProvider } from "./tools/metadata-strip/state";
+import { NineSliceCropProvider } from "./tools/nine-slice-crop/state";
 import { ToolNav } from "./components/tool-nav";
 import { Workspace } from "./components/workspace";
 import { ThemeSwitcher } from "./components/theme-switcher";
@@ -37,6 +38,7 @@ export function App() {
         <ImageDiffProvider>
         <BatchRenameProvider>
         <MetadataStripProvider>
+        <NineSliceCropProvider>
         <main class="tuya-shell">
           <header class="tuya-titlebar">
             <strong>SimpleImageCompress</strong>
@@ -49,6 +51,7 @@ export function App() {
             </section>
           </div>
         </main>
+        </NineSliceCropProvider>
         </MetadataStripProvider>
         </BatchRenameProvider>
         </ImageDiffProvider>

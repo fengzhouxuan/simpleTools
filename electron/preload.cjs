@@ -101,5 +101,9 @@ contextBridge.exposeInMainWorld("simpleImage", {
         return () => ipcRenderer.off("tools:metadata-strip:progress", wrapped);
       },
     },
+    nineSliceCrop: {
+      analyze: (payload) => ipcRenderer.invoke("tools:nine-slice-crop:analyze", payload),
+      export: (payload) => ipcRenderer.invoke("tools:nine-slice-crop:export", payload),
+    },
   },
 });

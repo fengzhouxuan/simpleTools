@@ -84,7 +84,8 @@ SimpleImage/
 │     ├─ icon-gen.cjs         # 图标生成：iconutil / to-ico / 多尺寸 PNG
 │     ├─ image-diff.cjs       # 像素级 diff，红色高亮 + 差异指标
 │     ├─ batch-rename.cjs     # 批量重命名：前缀 / 后缀 / 序号 / 正则
-│     └─ metadata-strip.cjs   # 元数据剥离：sharp 默认 strip 全部 + 可选保留 ICC/Orientation
+│     ├─ metadata-strip.cjs   # 元数据剥离：sharp 默认 strip 全部 + 可选保留 ICC/Orientation
+│     └─ nine-slice-crop.cjs  # 9-slice 资源压缩：裁掉中间冗余 + 还原误差检测
 ├─ src/
 │  ├─ main.tsx                # Preact 渲染入口
 │  ├─ App.tsx                 # 根组件，承载多层 Provider + 整窗布局
@@ -121,7 +122,8 @@ SimpleImage/
 │  │  ├─ icon-gen/            # 图标生成
 │  │  ├─ image-diff/          # 图片对比（像素级 diff）
 │  │  ├─ batch-rename/        # 批量重命名
-│  │  └─ metadata-strip/      # 元数据剥离（EXIF/GPS/IPTC/XMP）
+│  │  ├─ metadata-strip/      # 元数据剥离（EXIF/GPS/IPTC/XMP）
+│  │  └─ nine-slice-crop/     # 九宫格裁切（SVG 编辑 + 实时还原预览）
 │  └─ assets/
 ├─ scripts/
 │  └─ generate-icons.mjs      # 生成应用本身的 icon.icns
@@ -329,6 +331,14 @@ npm run dist:mac
   - `pwa`：3 张 PNG（192/512/1024）
   - 所有 sharp.resize 用 `fit: "contain"` + 透明背景，保证图标比例不变形
 
+- [electron/tools/nine-slice-crop.cjs](/Users/wepie/Documents/Github/SimpleImage/electron/tools/nine-slice-crop.cjs)
+  九宫格裁切工具，注册两条 IPC：`tools:nine-slice-crop:analyze`（防抖触发，给前端实时反馈）+ `tools:nine-slice-crop:export`（落盘）：
+  - `bandSourceRects(W, H, insets, centerKeep)` 纯函数：算 4 角 / 4 边带 / 中心的 sharp.extract 矩形（4 个 inset 都可独立为 0 自动退化）
+  - `buildCroppedBuffer()` 输出小图：4 角原样 + 4 边带取几何中心 ckx×t / l×cky 像素 + 中心取 ckx×cky patch → 用 sharp.composite 摆到 (l + ckx + r) × (t + cky + b) 的小画布
+  - `buildRestoredBuffer()` 反向算法：用同样的代表种子，把 4 边带 resize fill 到 centerW × t（等等）+ 中心 resize 到 centerW × centerH → 还原回原尺寸
+  - `computeRestoreError()` 复用 image-diff 思路：原图 vs 还原图 → raw RGBA max-channel-delta，threshold=5，输出 diffRatio + 红色高亮 PNG（base64 data URI）
+  - 单元测试覆盖 4 个纯函数 22 个 case（含 9-slice / 3-slice 横/竖 / 退化 / 边界值）
+
 - [electron/tools/metadata-strip.cjs](/Users/wepie/Documents/Github/SimpleImage/electron/tools/metadata-strip.cjs)
   元数据剥离工具，注册 `tools:metadata-strip:run`：
   - `buildMetadataOptions(meta, opts)` 纯函数：根据 `preserveOrientation` 决定是否往 `sharp.withMetadata({ orientation })` 传值（原图没 orientation 时不无中生有）
@@ -368,6 +378,8 @@ npm run dist:mac
 - `tools.batchRename.preview(payload)` — 算 plan 给前端预览
 - `tools.batchRename.execute(payload)` — 应用规则改名
 - `tools.metadataStrip.run(payload)` — 批量剥离元数据
+- `tools.nineSliceCrop.analyze(payload)` — 防抖触发：算输出尺寸 / 节省比 / 还原误差 + diff 可视化 dataUri
+- `tools.nineSliceCrop.export(payload)` — 写小图 PNG + .9slice.json 元数据
 
 新增工具的能力时遵循这条链路：
 

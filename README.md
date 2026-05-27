@@ -14,7 +14,7 @@ SimpleImageCompress 当前是一个纯本地的桌面图片压缩工具原型，
       <a href="docs/screenshots/01-home.png">
         <img src="docs/screenshots/01-home.png" alt="工具首页 dashboard" />
       </a>
-      <br><sub><b>工具首页</b> — 8 个工具入口 + 推荐工作流 + 主题切换</sub>
+      <br><sub><b>工具首页</b> — 9 个工具入口 + 推荐工作流 + 主题切换</sub>
     </td>
     <td width="50%" align="center">
       <a href="docs/screenshots/02-compress.png">
@@ -87,6 +87,7 @@ SimpleImageCompress 当前是一个纯本地的桌面图片压缩工具原型，
 - 图片对比：两张图像素级 diff，红色高亮不同处 + 差异指标（不同像素数 / 占比 / 最大单通道差），尺寸不同自动 contain 缩放再比对
 - 批量重命名：前缀 / 后缀 / 序号补零 / 正则替换 链式组合，before→after 实时预览 + 冲突检测，支持原地改名或复制到新目录改名
 - 元数据剥离：批量去除 EXIF / GPS / IPTC / XMP 等隐私信息，JPG 走 mozjpeg + 95 质量重编码（肉眼几乎无损），可选保留 ICC profile 与 EXIF Orientation
+- 九宫格裁切：大图按 9-slice 切分点裁掉中间冗余 → 输出极小代表小图 + .9slice.json 元数据；4 个 inset 独立可为 0 自动支持 3-slice 横/竖；实时显示输出尺寸 / 节省比 / 还原误差
 
 ## 环境要求
 
@@ -119,7 +120,7 @@ simpleimage compress path/to/*.png --preset web --output out/
 
 支持全部 6 个可命令化工具：`compress / atlas-pack / atlas-unpack / icon-gen / image-diff / batch-rename`。`simpleimage --help` 看完整参数。CLI 用纯 Node 跑，不拉 Electron 进程，启动快、适合脚本集成。
 
-> 元数据剥离与图集增量打包暂未提供 CLI，前者已规划补齐（结构简单），后者依赖 GUI 拆图缓存。
+> 元数据剥离、九宫格裁切、图集增量打包暂未提供 CLI。前两个结构简单已规划补齐，后者依赖 GUI 拆图缓存。
 
 ## 构建与本地验证
 

@@ -51,6 +51,12 @@ const TOOL_CAPABILITIES: Partial<Record<ToolKey, string[]>> = {
     "JPG 走 mozjpeg 重编码 + 95 质量，肉眼几乎无损",
     "支持 JPG / PNG / WebP / GIF；原文件夹 / 覆盖 / 自定义三种保存策略",
   ],
+  "nine-slice-crop": [
+    "大图按 4 个 inset 切分 → 裁掉中间冗余，输出极小代表小图",
+    "4 个 inset 独立可为 0：支持 9-slice / 3-slice 横 / 3-slice 竖 / 不对称",
+    "实时显示输出尺寸 / 节省比 / 还原误差三个核心数字",
+    "拖辅助线 + 数字精调 + 方向键微调；3 模式预览（原图 / 还原图 / Diff）",
+  ],
 };
 
 const WORKFLOWS: { title: string; steps: { tool: ToolKey; text: string }[] }[] = [
@@ -98,6 +104,13 @@ const WORKFLOWS: { title: string; steps: { tool: ToolKey; text: string }[] }[] =
     steps: [
       { tool: "metadata-strip", text: "去除 EXIF / GPS / IPTC / XMP 等元数据，避免泄露拍摄设备与位置" },
       { tool: "compress", text: "需要的话再压一道减体积" },
+    ],
+  },
+  {
+    title: "UI 资源九宫格优化",
+    steps: [
+      { tool: "nine-slice-crop", text: "大图按 9-slice 裁掉中间冗余 → 极小代表小图 + .9slice.json" },
+      { tool: "atlas-pack", text: "把裁好的小图打进图集，体积进一步省" },
     ],
   },
 ];
