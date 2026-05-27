@@ -6,6 +6,47 @@
 
 SimpleImageCompress 当前是一个纯本地的桌面图片压缩工具原型，但产品最终目标不是“单一压图工具”，而是一个面向美术与资源处理流程的图像资产工具集合。
 
+## 截图
+
+<table>
+  <tr>
+    <td width="50%" align="center">
+      <a href="docs/screenshots/01-home.png">
+        <img src="docs/screenshots/01-home.png" alt="工具首页 dashboard" />
+      </a>
+      <br><sub><b>工具首页</b> — 7 个工具入口 + 推荐工作流 + 主题切换</sub>
+    </td>
+    <td width="50%" align="center">
+      <a href="docs/screenshots/02-compress.png">
+        <img src="docs/screenshots/02-compress.png" alt="图片压缩" />
+      </a>
+      <br><sub><b>图片压缩</b> — 4 个预设 + 质量/目标体积两种模式</sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" align="center">
+      <a href="docs/screenshots/03-atlas-pack.png">
+        <img src="docs/screenshots/03-atlas-pack.png" alt="图集打包" />
+      </a>
+      <br><sub><b>图集打包</b> — MaxRects 算法 + 实时预览 + 4 种元数据格式</sub>
+    </td>
+    <td width="50%" align="center">
+      <a href="docs/screenshots/04-atlas-unpack.png">
+        <img src="docs/screenshots/04-atlas-unpack.png" alt="图集拆分" />
+      </a>
+      <br><sub><b>图集拆分</b> — 解析 plist/JSON/CSS 元数据，还原单图</sub>
+    </td>
+  </tr>
+  <tr>
+    <td colspan="2" align="center">
+      <a href="docs/screenshots/05-icon-gen.png">
+        <img src="docs/screenshots/05-icon-gen.png" alt="图标生成" width="70%" />
+      </a>
+      <br><sub><b>图标生成</b> — 一张大图 → macOS .icns / Windows .ico / Web favicon / PWA 全套</sub>
+    </td>
+  </tr>
+</table>
+
 长期形态会逐步扩展为：
 
 - 图片压缩
