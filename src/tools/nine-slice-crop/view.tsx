@@ -364,7 +364,7 @@ export function NineSliceCropView() {
                   <span>X</span>
                   <input
                     type="number"
-                    min="1"
+                    min="0"
                     max="8"
                     value={state.centerKeep.x}
                     onInput={(e) =>
@@ -372,9 +372,9 @@ export function NineSliceCropView() {
                         centerKeep: {
                           ...state.centerKeep,
                           x: Math.max(
-                            1,
+                            0,
                             Math.floor(
-                              Number((e.currentTarget as HTMLInputElement).value) || 1,
+                              Number((e.currentTarget as HTMLInputElement).value) || 0,
                             ),
                           ),
                         },
@@ -386,7 +386,7 @@ export function NineSliceCropView() {
                   <span>Y</span>
                   <input
                     type="number"
-                    min="1"
+                    min="0"
                     max="8"
                     value={state.centerKeep.y}
                     onInput={(e) =>
@@ -394,9 +394,9 @@ export function NineSliceCropView() {
                         centerKeep: {
                           ...state.centerKeep,
                           y: Math.max(
-                            1,
+                            0,
                             Math.floor(
-                              Number((e.currentTarget as HTMLInputElement).value) || 1,
+                              Number((e.currentTarget as HTMLInputElement).value) || 0,
                             ),
                           ),
                         },
@@ -406,7 +406,9 @@ export function NineSliceCropView() {
                 </label>
               </div>
               <span class="param-hint">
-                通常 1px 够用；2~3px 可避免双线性采样的边缘 bleeding
+                <b>0（默认）</b>：4 角直接拼接，小图无缝；中心由引擎从邻接像素延伸。
+                <br />
+                <b>≥1</b>：显式保留中心代表像素，小图会有 1px 缝隙但中心颜色精确。
               </span>
             </div>
 

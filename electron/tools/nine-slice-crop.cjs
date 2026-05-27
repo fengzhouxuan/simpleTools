@@ -31,8 +31,8 @@ function validateInsets(W, H, insets, centerKeep) {
   if (l < 0 || t < 0 || r < 0 || b < 0) {
     throw new Error("inset 不能为负");
   }
-  if (centerKeep.x < 1 || centerKeep.y < 1) {
-    throw new Error("centerKeep 至少为 1px");
+  if (centerKeep.x < 0 || centerKeep.y < 0) {
+    throw new Error("centerKeep 不能为负");
   }
   if (l + r >= W) {
     throw new Error(`L (${l}) + R (${r}) 必须 < 原图宽 ${W}`);
@@ -80,17 +80,20 @@ function computeCropSegments(size, near, far, seed) {
     dstCursor = near;
   }
 
-  // 中心代表种子：从可压缩区的几何中心取 seed 像素
-  // 等价于运行时 9-slice 拉伸时 GPU 双线性采样的初始坐标
-  const compressibleSize = size - near - far;
-  const seedSrcStart = near + Math.floor((compressibleSize - seed) / 2);
-  segments.push({
-    srcStart: seedSrcStart,
-    srcSize: seed,
-    dstStart: dstCursor,
-    dstSize: seed,
-  });
-  dstCursor += seed;
+  // 中心代表种子：seed > 0 时从可压缩区的几何中心取 seed 像素
+  // seed = 0 时不生成中心段 → 4 角直接相邻（imageslicer 风格无缝输出）
+  //   引擎运行时假设中心可从 4 角邻接像素插值得到（适合"中心是 4 角内边缘色延伸"的图）
+  if (seed > 0) {
+    const compressibleSize = size - near - far;
+    const seedSrcStart = near + Math.floor((compressibleSize - seed) / 2);
+    segments.push({
+      srcStart: seedSrcStart,
+      srcSize: seed,
+      dstStart: dstCursor,
+      dstSize: seed,
+    });
+    dstCursor += seed;
+  }
 
   if (far > 0) {
     segments.push({
@@ -127,15 +130,24 @@ function computeRestoreSegments(size, near, far, seed) {
     });
   }
 
-  // 中心：取 seed 一小块 → 拉到完整中心区域
+  // 中心区域：seed >= 1 → 取几何中心代表；seed = 0 → 从近端紧邻 1px 取代表
+  //   （seed=0 时等价于 imageslicer 假设的"4 角内边缘色延伸"行为）
   const compressibleSize = size - near - far;
-  const seedSrcStart = near + Math.floor((compressibleSize - seed) / 2);
-  segments.push({
-    srcStart: seedSrcStart,
-    srcSize: seed,
-    dstStart: near,
-    dstSize: compressibleSize,
-  });
+  if (compressibleSize > 0) {
+    const useSeed = seed > 0 ? seed : 1;
+    const srcStart =
+      seed > 0
+        ? near + Math.floor((compressibleSize - useSeed) / 2)
+        : near > 0
+          ? near
+          : 0;
+    segments.push({
+      srcStart,
+      srcSize: useSeed,
+      dstStart: near,
+      dstSize: compressibleSize,
+    });
+  }
 
   if (far > 0) {
     segments.push({

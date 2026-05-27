@@ -48,7 +48,9 @@ export type NineSliceCropState = {
 const initialState: NineSliceCropState = {
   source: null,
   insets: { l: 0, t: 0, r: 0, b: 0 },
-  centerKeep: { x: 1, y: 1 },
+  // 默认 0：4 角直接拼接，小图视觉无缝（imageslicer 风格）
+  // 提到 1+ 可显式保留中心代表像素，但小图直接看会有 1px 缝隙
+  centerKeep: { x: 0, y: 0 },
   center: "stretch",
   outputDir: "",
   outputName: "",

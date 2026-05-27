@@ -56,6 +56,18 @@ describe("computeOutputSize", () => {
       computeOutputSize(ORIG, { l: 12, t: 20, r: 12, b: 28 }, { x: 2, y: 4 }),
     ).toEqual({ w: 26, h: 52 });
   });
+
+  it("center_keep = 0（默认无缝模式）：4 角直接拼接，输出 (L+R)×(T+B)", () => {
+    expect(
+      computeOutputSize(ORIG, { l: 90, t: 114, r: 90, b: 114 }, { x: 0, y: 0 }),
+    ).toEqual({ w: 180, h: 228 });
+  });
+
+  it("center_keep.x=0, y=1 不对称：水平无缝，垂直有种子", () => {
+    expect(
+      computeOutputSize(ORIG, { l: 12, t: 20, r: 12, b: 28 }, { x: 0, y: 1 }),
+    ).toEqual({ w: 24, h: 49 });
+  });
 });
 
 describe("computeSavedRatio", () => {
@@ -119,10 +131,16 @@ describe("validateInsets", () => {
     ).toThrow(/inset 不能为负/);
   });
 
-  it("centerKeep < 1 抛错", () => {
+  it("center_keep = 0 合法（无缝模式）", () => {
     expect(() =>
-      validateInsets(400, 200, { l: 0, t: 0, r: 0, b: 0 }, { x: 0, y: 1 }),
-    ).toThrow(/至少为 1px/);
+      validateInsets(400, 200, { l: 12, t: 20, r: 12, b: 28 }, { x: 0, y: 0 }),
+    ).not.toThrow();
+  });
+
+  it("centerKeep < 0 抛错", () => {
+    expect(() =>
+      validateInsets(400, 200, { l: 0, t: 0, r: 0, b: 0 }, { x: -1, y: 1 }),
+    ).toThrow(/不能为负/);
   });
 
   it("L+R >= W 抛错", () => {
@@ -203,6 +221,36 @@ describe("computeCropSegments", () => {
     expect(r.segments[1].srcSize).toBe(4);
     expect(r.segments[1].dstSize).toBe(4);
   });
+
+  it("seed = 0（无缝模式）：仅近段 + 远段，无中心段", () => {
+    const r = computeCropSegments(400, 12, 12, 0);
+    expect(r.outSize).toBe(24); // L + R，无中心
+    expect(r.segments).toHaveLength(2);
+    expect(r.segments[0]).toEqual({
+      srcStart: 0,
+      srcSize: 12,
+      dstStart: 0,
+      dstSize: 12,
+    });
+    expect(r.segments[1]).toEqual({
+      srcStart: 388,
+      srcSize: 12,
+      dstStart: 12,
+      dstSize: 12,
+    });
+  });
+
+  it("seed = 0 且仅近端有切：1 段（近段）", () => {
+    const r = computeCropSegments(400, 30, 0, 0);
+    expect(r.outSize).toBe(30);
+    expect(r.segments).toHaveLength(1);
+    expect(r.segments[0]).toEqual({
+      srcStart: 0,
+      srcSize: 30,
+      dstStart: 0,
+      dstSize: 30,
+    });
+  });
 });
 
 // ============================================================
@@ -256,6 +304,25 @@ describe("computeRestoreSegments", () => {
       srcSize: 1,
       dstStart: 30,
       dstSize: 370,
+    });
+  });
+
+  it("seed = 0 还原：中心代表从近端紧邻 1px 取（imageslicer 风格的角邻插值）", () => {
+    const r = computeRestoreSegments(400, 12, 12, 0);
+    expect(r).toHaveLength(3);
+    expect(r[0]).toEqual({ srcStart: 0, srcSize: 12, dstStart: 0, dstSize: 12 });
+    // 中心：源 = 紧邻左角内边缘的 1 像素（near=12 位置），目标 = 完整中心
+    expect(r[1]).toEqual({
+      srcStart: 12,
+      srcSize: 1,
+      dstStart: 12,
+      dstSize: 376,
+    });
+    expect(r[2]).toEqual({
+      srcStart: 388,
+      srcSize: 12,
+      dstStart: 388,
+      dstSize: 12,
     });
   });
 });
