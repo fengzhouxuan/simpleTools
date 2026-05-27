@@ -2432,27 +2432,28 @@ select:focus-visible {
     #1f1f23;
 }
 
-/* 区域高亮：4 角不变形 / 4 边带可压缩 / 中心可拉伸 */
+/* 区域高亮：4 角不变形 / 4 边带可压缩 / 中心可拉伸
+   注意：透明度需要在彩色底图上仍能看清楚 — 0.15 太淡，在粉色 / 红色背景上几乎不可见 */
 .nine-slice-corner {
-  fill: rgba(52, 199, 89, 0.18); /* 绿 = 不变形 */
-  stroke: rgba(52, 199, 89, 0.5);
-  stroke-width: 1;
+  fill: rgba(52, 199, 89, 0.35); /* 绿 = 不变形 */
+  stroke: rgba(52, 199, 89, 0.85);
+  stroke-width: 1.5;
   vector-effect: non-scaling-stroke;
   pointer-events: none;
 }
 
 .nine-slice-band {
-  fill: rgba(255, 149, 0, 0.15); /* 橙 = 单方向可压缩 */
-  stroke: rgba(255, 149, 0, 0.4);
-  stroke-width: 0.5;
+  fill: rgba(255, 149, 0, 0.32); /* 橙 = 单方向可压缩 */
+  stroke: rgba(255, 149, 0, 0.75);
+  stroke-width: 1;
   vector-effect: non-scaling-stroke;
   pointer-events: none;
 }
 
 .nine-slice-center {
-  fill: rgba(255, 59, 48, 0.15); /* 红 = 整块可压缩到 1px */
-  stroke: rgba(255, 59, 48, 0.45);
-  stroke-width: 0.5;
+  fill: rgba(255, 59, 48, 0.32); /* 红 = 整块可压缩到 seed 像素 */
+  stroke: rgba(255, 59, 48, 0.8);
+  stroke-width: 1;
   vector-effect: non-scaling-stroke;
   pointer-events: none;
 }

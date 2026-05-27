@@ -1,60 +1,81 @@
 import { describe, it, expect } from "vitest";
 import nineSliceCrop from "./nine-slice-crop.cjs";
 
-const { validateInsets, computeOutputSize, computeSavedRatio, bandSourceRects } =
-  nineSliceCrop.__test__;
+const {
+  validateInsets,
+  computeCropSegments,
+  computeRestoreSegments,
+  computeOutputSize,
+  computeSavedRatio,
+} = nineSliceCrop.__test__;
 
 const CK = { x: 1, y: 1 };
 
+// ============================================================
+// computeOutputSize — 关键 bug 区域
+// ============================================================
+// 旧算法 (L+ckx+R)×(T+cky+B) 在 3-slice 时会把不切的维度压成 1px → 错
+// 正确：只在"用户切了的方向"压缩，不切的方向保留原尺寸
+
 describe("computeOutputSize", () => {
+  const ORIG = { w: 750, h: 956 };
+
   it("9-slice 标准：4 个 inset 都 > 0", () => {
-    expect(computeOutputSize({ l: 12, t: 20, r: 12, b: 28 }, { x: 1, y: 1 })).toEqual({
-      w: 25, // 12 + 1 + 12
-      h: 49, // 20 + 1 + 28
+    expect(
+      computeOutputSize(ORIG, { l: 12, t: 20, r: 12, b: 28 }, CK),
+    ).toEqual({ w: 25, h: 49 });
+  });
+
+  it("横向 3-slice (L=R>0, T=B=0)：高度保留原图", () => {
+    expect(
+      computeOutputSize(ORIG, { l: 12, t: 0, r: 12, b: 0 }, CK),
+    ).toEqual({ w: 25, h: 956 });
+  });
+
+  it("竖向 3-slice (T=B>0, L=R=0)：宽度保留原图", () => {
+    expect(
+      computeOutputSize(ORIG, { l: 0, t: 340, r: 0, b: 76 }, CK),
+    ).toEqual({ w: 750, h: 417 });
+  });
+
+  it("退化 (全 0)：不压，输出 = 原图", () => {
+    expect(computeOutputSize(ORIG, { l: 0, t: 0, r: 0, b: 0 }, CK)).toEqual({
+      w: 750,
+      h: 956,
     });
   });
 
-  it("3-slice 横向：L/R > 0, T=B=0", () => {
-    expect(computeOutputSize({ l: 12, t: 0, r: 12, b: 0 }, { x: 1, y: 1 })).toEqual({
-      w: 25,
-      h: 1,
-    });
+  it("L-slice (只一边 > 0)：另一维仍压 ckx，但不切方向保留原图", () => {
+    expect(
+      computeOutputSize(ORIG, { l: 30, t: 0, r: 0, b: 0 }, CK),
+    ).toEqual({ w: 31, h: 956 });
   });
 
-  it("3-slice 竖向：T/B > 0, L=R=0", () => {
-    expect(computeOutputSize({ l: 0, t: 8, r: 0, b: 12 }, { x: 1, y: 1 })).toEqual({
-      w: 1,
-      h: 21,
-    });
-  });
-
-  it("center_keep > 1：尺寸按比例增加", () => {
-    expect(computeOutputSize({ l: 12, t: 20, r: 12, b: 28 }, { x: 2, y: 4 })).toEqual({
-      w: 26, // 12 + 2 + 12
-      h: 52, // 20 + 4 + 28
-    });
-  });
-
-  it("全 0 退化：仅剩中心 keep", () => {
-    expect(computeOutputSize({ l: 0, t: 0, r: 0, b: 0 }, { x: 1, y: 1 })).toEqual({
-      w: 1,
-      h: 1,
-    });
+  it("center_keep > 1：种子尺寸跟随增加", () => {
+    expect(
+      computeOutputSize(ORIG, { l: 12, t: 20, r: 12, b: 28 }, { x: 2, y: 4 }),
+    ).toEqual({ w: 26, h: 52 });
   });
 });
 
 describe("computeSavedRatio", () => {
-  it("典型例子：400×200 → 25×49，省 ~98.5%", () => {
+  it("典型 9-slice：400×200 → 25×49，省 ~98.5%", () => {
     const ratio = computeSavedRatio({ w: 400, h: 200 }, { w: 25, h: 49 });
     expect(ratio).toBeGreaterThan(0.984);
     expect(ratio).toBeLessThan(0.986);
+  });
+
+  it("竖向 3-slice：750×956 → 750×417，省 ~56%（水平方向不压）", () => {
+    const ratio = computeSavedRatio({ w: 750, h: 956 }, { w: 750, h: 417 });
+    expect(ratio).toBeGreaterThan(0.56);
+    expect(ratio).toBeLessThan(0.57);
   });
 
   it("输出 = 原图：0%", () => {
     expect(computeSavedRatio({ w: 100, h: 100 }, { w: 100, h: 100 })).toBe(0);
   });
 
-  it("输出 > 原图：clamp 到 0（不会出现负数）", () => {
+  it("输出 > 原图：clamp 到 0", () => {
     expect(computeSavedRatio({ w: 50, h: 50 }, { w: 100, h: 100 })).toBe(0);
   });
 
@@ -63,14 +84,36 @@ describe("computeSavedRatio", () => {
   });
 });
 
+// ============================================================
+// validateInsets — 边界值
+// ============================================================
+
 describe("validateInsets", () => {
-  it("正常 inset 通过", () => {
+  it("正常 9-slice 通过", () => {
     expect(() =>
       validateInsets(400, 200, { l: 12, t: 20, r: 12, b: 28 }, CK),
     ).not.toThrow();
   });
 
-  it("负数 inset 抛错", () => {
+  it("3-slice 横向 (T=B=0) 通过", () => {
+    expect(() =>
+      validateInsets(400, 200, { l: 12, t: 0, r: 12, b: 0 }, CK),
+    ).not.toThrow();
+  });
+
+  it("3-slice 竖向 (L=R=0) 通过", () => {
+    expect(() =>
+      validateInsets(400, 200, { l: 0, t: 20, r: 0, b: 28 }, CK),
+    ).not.toThrow();
+  });
+
+  it("全 0 通过（退化但合法）", () => {
+    expect(() =>
+      validateInsets(400, 200, { l: 0, t: 0, r: 0, b: 0 }, CK),
+    ).not.toThrow();
+  });
+
+  it("负数抛错", () => {
     expect(() =>
       validateInsets(400, 200, { l: -1, t: 0, r: 0, b: 0 }, CK),
     ).toThrow(/inset 不能为负/);
@@ -82,100 +125,137 @@ describe("validateInsets", () => {
     ).toThrow(/至少为 1px/);
   });
 
-  it("L + R >= W 抛错（边界 = 原宽）", () => {
+  it("L+R >= W 抛错", () => {
     expect(() =>
       validateInsets(100, 200, { l: 50, t: 0, r: 50, b: 0 }, CK),
     ).toThrow(/必须 < 原图宽/);
   });
 
-  it("T + B >= H 抛错", () => {
+  it("T+B >= H 抛错", () => {
     expect(() =>
       validateInsets(400, 100, { l: 0, t: 60, r: 0, b: 40 }, CK),
     ).toThrow(/必须 < 原图高/);
   });
+});
 
-  it("L + R = W - 1（最贴近边界的合法值）通过", () => {
-    expect(() =>
-      validateInsets(100, 100, { l: 49, t: 0, r: 50, b: 0 }, CK),
-    ).not.toThrow();
+// ============================================================
+// computeCropSegments — 网格分段抽象的核心
+// ============================================================
+
+describe("computeCropSegments", () => {
+  it("退化 (near=far=0)：整段保留", () => {
+    const r = computeCropSegments(750, 0, 0, 1);
+    expect(r.outSize).toBe(750);
+    expect(r.segments).toEqual([
+      { srcStart: 0, srcSize: 750, dstStart: 0, dstSize: 750 },
+    ]);
+  });
+
+  it("9-slice 维度 (near>0, far>0)：3 段", () => {
+    const r = computeCropSegments(400, 12, 12, 1);
+    expect(r.outSize).toBe(25);
+    expect(r.segments).toHaveLength(3);
+    // 近段
+    expect(r.segments[0]).toEqual({
+      srcStart: 0,
+      srcSize: 12,
+      dstStart: 0,
+      dstSize: 12,
+    });
+    // 中心代表种子：从几何中心取，midX = 12 + floor((400-12-12-1)/2) = 12 + 187 = 199
+    expect(r.segments[1]).toEqual({
+      srcStart: 199,
+      srcSize: 1,
+      dstStart: 12,
+      dstSize: 1,
+    });
+    // 远段
+    expect(r.segments[2]).toEqual({
+      srcStart: 388,
+      srcSize: 12,
+      dstStart: 13,
+      dstSize: 12,
+    });
+  });
+
+  it("L-slice 维度 (near>0, far=0)：2 段", () => {
+    const r = computeCropSegments(400, 30, 0, 1);
+    expect(r.outSize).toBe(31);
+    expect(r.segments).toHaveLength(2);
+    expect(r.segments[0]).toEqual({
+      srcStart: 0,
+      srcSize: 30,
+      dstStart: 0,
+      dstSize: 30,
+    });
+    // 中心代表：30 + floor((400-30-0-1)/2) = 30 + 184 = 214
+    expect(r.segments[1]).toEqual({
+      srcStart: 214,
+      srcSize: 1,
+      dstStart: 30,
+      dstSize: 1,
+    });
+  });
+
+  it("center_keep = 4：种子尺寸 4", () => {
+    const r = computeCropSegments(400, 12, 12, 4);
+    expect(r.outSize).toBe(28); // 12 + 4 + 12
+    expect(r.segments[1].srcSize).toBe(4);
+    expect(r.segments[1].dstSize).toBe(4);
   });
 });
 
-describe("bandSourceRects", () => {
-  // 用一个干净的例子：400×200，L=12 T=20 R=12 B=28，center=1×1
-  const W = 400;
-  const H = 200;
-  const insets = { l: 12, t: 20, r: 12, b: 28 };
+// ============================================================
+// computeRestoreSegments — 还原分段
+// ============================================================
 
-  it("4 角的尺寸正确", () => {
-    const rects = bandSourceRects(W, H, insets, CK);
-    expect(rects.tl).toEqual({ left: 0, top: 0, width: 12, height: 20 });
-    expect(rects.tr).toEqual({ left: 388, top: 0, width: 12, height: 20 });
-    expect(rects.bl).toEqual({ left: 0, top: 172, width: 12, height: 28 });
-    expect(rects.br).toEqual({ left: 388, top: 172, width: 12, height: 28 });
+describe("computeRestoreSegments", () => {
+  it("退化：整段保留，源 == 目标", () => {
+    const r = computeRestoreSegments(750, 0, 0, 1);
+    expect(r).toEqual([
+      { srcStart: 0, srcSize: 750, dstStart: 0, dstSize: 750 },
+    ]);
   });
 
-  it("centerW / centerH 正确", () => {
-    const rects = bandSourceRects(W, H, insets, CK);
-    expect(rects.centerW).toBe(376); // 400 - 12 - 12
-    expect(rects.centerH).toBe(152); // 200 - 20 - 28
-  });
-
-  it("中心 patch 位于几何中心", () => {
-    const rects = bandSourceRects(W, H, insets, CK);
-    // midX = 12 + floor((376 - 1) / 2) = 12 + 187 = 199
-    // midY = 20 + floor((152 - 1) / 2) = 20 + 75 = 95
-    expect(rects.centerPatch).toEqual({
-      left: 199,
-      top: 95,
-      width: 1,
-      height: 1,
+  it("9-slice 维度：中心段源 1px 拉到完整中心", () => {
+    const r = computeRestoreSegments(400, 12, 12, 1);
+    expect(r).toHaveLength(3);
+    // 边段：源 == 目标（不拉伸）
+    expect(r[0]).toEqual({
+      srcStart: 0,
+      srcSize: 12,
+      dstStart: 0,
+      dstSize: 12,
+    });
+    expect(r[2]).toEqual({
+      srcStart: 388,
+      srcSize: 12,
+      dstStart: 388,
+      dstSize: 12,
+    });
+    // 中心段：源 1px，目标 376px（拉 376 倍）
+    expect(r[1]).toEqual({
+      srcStart: 199,
+      srcSize: 1,
+      dstStart: 12,
+      dstSize: 376,
     });
   });
 
-  it("上下边带从中心列开始取 ckx 宽", () => {
-    const rects = bandSourceRects(W, H, insets, CK);
-    expect(rects.topBand).toEqual({ left: 199, top: 0, width: 1, height: 20 });
-    expect(rects.bottomBand).toEqual({
-      left: 199,
-      top: 172,
-      width: 1,
-      height: 28,
+  it("L-slice 维度：2 段，中心拉到整个 (size - near)", () => {
+    const r = computeRestoreSegments(400, 30, 0, 1);
+    expect(r).toHaveLength(2);
+    expect(r[0]).toEqual({
+      srcStart: 0,
+      srcSize: 30,
+      dstStart: 0,
+      dstSize: 30,
     });
-  });
-
-  it("左右边带从中心行开始取 cky 高", () => {
-    const rects = bandSourceRects(W, H, insets, CK);
-    expect(rects.leftBand).toEqual({ left: 0, top: 95, width: 12, height: 1 });
-    expect(rects.rightBand).toEqual({
-      left: 388,
-      top: 95,
-      width: 12,
-      height: 1,
-    });
-  });
-
-  it("3-slice 横向（T=B=0）的 centerH = H，左右边带高 = cky", () => {
-    const rects = bandSourceRects(200, 40, { l: 12, t: 0, r: 12, b: 0 }, CK);
-    expect(rects.centerH).toBe(40);
-    expect(rects.leftBand).toEqual({ left: 0, top: 19, width: 12, height: 1 });
-    expect(rects.rightBand).toEqual({
-      left: 188,
-      top: 19,
-      width: 12,
-      height: 1,
-    });
-  });
-
-  it("中心 keep 2×4 时 patch 尺寸正确且仍居中", () => {
-    const rects = bandSourceRects(W, H, insets, { x: 2, y: 4 });
-    // midX = 12 + floor((376 - 2) / 2) = 12 + 187 = 199
-    // midY = 20 + floor((152 - 4) / 2) = 20 + 74 = 94
-    expect(rects.centerPatch).toEqual({
-      left: 199,
-      top: 94,
-      width: 2,
-      height: 4,
+    expect(r[1]).toEqual({
+      srcStart: 214,
+      srcSize: 1,
+      dstStart: 30,
+      dstSize: 370,
     });
   });
 });

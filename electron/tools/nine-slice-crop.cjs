@@ -9,24 +9,21 @@ const core = require("../core/fs.cjs");
 // 输入：成品大图 + 4 个 inset (L/T/R/B) + center_keep
 // 输出：裁掉中间冗余的最小代表小图 + 元数据 JSON
 //
-// 9 块布局（任意 inset 可为 0 自动退化）：
-//   ┌─────┬─────────┬─────┐
-//   │ TL  │    T    │ TR  │  ← TL/TR 不变形
-//   ├─────┼─────────┼─────┤  ← T/B 水平拉伸
-//   │  L  │  Center │  R  │  ← L/R 垂直拉伸；Center 双向拉伸
-//   ├─────┼─────────┼─────┤
-//   │ BL  │    B    │ BR  │
-//   └─────┴─────────┴─────┘
+// 核心抽象：每个维度独立处理为 1~3 段
+//   - 近端有切 (L>0 或 T>0)：产生"近段"
+//   - 中心可压缩 (size - near - far > 0)：产生"中心代表段"（用 seed 像素代表）
+//   - 远端有切 (R>0 或 B>0)：产生"远段"
 //
-// 输出尺寸：
-//   outW = L + center_keep.x + R
-//   outH = T + center_keep.y + B
+// 输出尺寸 = 各段累加：
+//   - 9-slice (4 个 inset 都 >0)        → 3×3 = 9 段，输出 (L+ckx+R) × (T+cky+B)
+//   - 横向 3-slice (L=R>0, T=B=0)      → 3×1 = 3 段，输出 (L+ckx+R) × H  ← 保留完整高度
+//   - 竖向 3-slice (T=B>0, L=R=0)      → 1×3 = 3 段，输出 W × (T+cky+B)  ← 保留完整宽度
+//   - 退化 (全 0)                       → 1×1 = 1 段，输出 W × H（不压）
 //
-// 中心 / 边带的"代表像素"：取原图对应区域的几何中心点
-// （等价于运行时 9-slice 拉伸时 GPU 双线性采样的初始坐标）
+// 引擎运行时：按 insets 划分 9 块，4 角原样、4 边带/中心从 seed 像素拉伸回去
 
 // ============================================================
-// 工具函数
+// 通用：参数校验
 // ============================================================
 
 function validateInsets(W, H, insets, centerKeep) {
@@ -45,14 +42,133 @@ function validateInsets(W, H, insets, centerKeep) {
   }
 }
 
-// 算输出尺寸（同 inset 一起决定）
-function computeOutputSize(insets, centerKeep) {
-  const outW = insets.l + centerKeep.x + insets.r;
-  const outH = insets.t + centerKeep.y + insets.b;
-  return { w: outW, h: outH };
+// ============================================================
+// 核心算法 1：裁切分段
+// ============================================================
+// 给定一个维度 (size)、近端 inset (near)、远端 inset (far)、中心代表种子 (seed)，
+// 返回这个维度上的分段表 + 输出总尺寸。
+//
+// 段表里每段 { srcStart, srcSize, dstStart, dstSize }：
+//   srcStart/srcSize = 这段在"原图"上的取样位置
+//   dstStart/dstSize = 这段在"输出小图"上的目标位置
+//
+// 退化：near=far=0 时返回单段 — "整段保留，源 == 目标"。
+// 这是统一抽象 — 调用方不需要 if/else 区分 9-slice/3-slice。
+
+function computeCropSegments(size, near, far, seed) {
+  if (near === 0 && far === 0) {
+    // 此维度未切：完整保留，不压缩
+    return {
+      outSize: size,
+      segments: [
+        { srcStart: 0, srcSize: size, dstStart: 0, dstSize: size },
+      ],
+    };
+  }
+
+  // 至少一端有切：产生 1~3 段
+  const segments = [];
+  let dstCursor = 0;
+
+  if (near > 0) {
+    segments.push({
+      srcStart: 0,
+      srcSize: near,
+      dstStart: 0,
+      dstSize: near,
+    });
+    dstCursor = near;
+  }
+
+  // 中心代表种子：从可压缩区的几何中心取 seed 像素
+  // 等价于运行时 9-slice 拉伸时 GPU 双线性采样的初始坐标
+  const compressibleSize = size - near - far;
+  const seedSrcStart = near + Math.floor((compressibleSize - seed) / 2);
+  segments.push({
+    srcStart: seedSrcStart,
+    srcSize: seed,
+    dstStart: dstCursor,
+    dstSize: seed,
+  });
+  dstCursor += seed;
+
+  if (far > 0) {
+    segments.push({
+      srcStart: size - far,
+      srcSize: far,
+      dstStart: dstCursor,
+      dstSize: far,
+    });
+    dstCursor += far;
+  }
+
+  return { outSize: dstCursor, segments };
 }
 
-// 算节省比：1 - 输出面积 / 原始面积
+// ============================================================
+// 核心算法 2：还原分段
+// ============================================================
+// 给定原图维度，返回从原图取代表种子 + 拉伸回原尺寸的段表。
+// 跟裁切算法的差别：中心段的"目标尺寸" = 完整中心宽 (而不是 seed)
+//   → 渲染时 resize fit:fill 把 seed 拉到完整中心
+
+function computeRestoreSegments(size, near, far, seed) {
+  if (near === 0 && far === 0) {
+    return [{ srcStart: 0, srcSize: size, dstStart: 0, dstSize: size }];
+  }
+
+  const segments = [];
+  if (near > 0) {
+    segments.push({
+      srcStart: 0,
+      srcSize: near,
+      dstStart: 0,
+      dstSize: near,
+    });
+  }
+
+  // 中心：取 seed 一小块 → 拉到完整中心区域
+  const compressibleSize = size - near - far;
+  const seedSrcStart = near + Math.floor((compressibleSize - seed) / 2);
+  segments.push({
+    srcStart: seedSrcStart,
+    srcSize: seed,
+    dstStart: near,
+    dstSize: compressibleSize,
+  });
+
+  if (far > 0) {
+    segments.push({
+      srcStart: size - far,
+      srcSize: far,
+      dstStart: near + compressibleSize,
+      dstSize: far,
+    });
+  }
+
+  return segments;
+}
+
+// ============================================================
+// 派生：输出尺寸 + 节省比
+// ============================================================
+
+function computeOutputSize(originalSize, insets, centerKeep) {
+  const xSeg = computeCropSegments(
+    originalSize.w,
+    insets.l,
+    insets.r,
+    centerKeep.x,
+  );
+  const ySeg = computeCropSegments(
+    originalSize.h,
+    insets.t,
+    insets.b,
+    centerKeep.y,
+  );
+  return { w: xSeg.outSize, h: ySeg.outSize };
+}
+
 function computeSavedRatio(originalSize, outputSize) {
   const orig = originalSize.w * originalSize.h;
   if (orig <= 0) return 0;
@@ -60,44 +176,8 @@ function computeSavedRatio(originalSize, outputSize) {
   return Math.max(0, 1 - out / orig);
 }
 
-// 4 个角的几何中心点（用于从原图取代表像素）
-function bandSourceRects(W, H, insets, centerKeep) {
-  const { l, t, r, b } = insets;
-  const { x: ckx, y: cky } = centerKeep;
-  const centerW = W - l - r;
-  const centerH = H - t - b;
-
-  // 中心带的代表 patch：取几何中心
-  const midX = l + Math.floor((centerW - ckx) / 2);
-  const midY = t + Math.floor((centerH - cky) / 2);
-
-  return {
-    centerW,
-    centerH,
-    // 4 角
-    tl: { left: 0, top: 0, width: l, height: t },
-    tr: { left: W - r, top: 0, width: r, height: t },
-    bl: { left: 0, top: H - b, width: l, height: b },
-    br: { left: W - r, top: H - b, width: r, height: b },
-    // 上/下边带：从中心列取 ckx 宽
-    topBand: { left: midX, top: 0, width: ckx, height: t },
-    bottomBand: { left: midX, top: H - b, width: ckx, height: b },
-    // 左/右边带：从中心行取 cky 高
-    leftBand: { left: 0, top: midY, width: l, height: cky },
-    rightBand: { left: W - r, top: midY, width: r, height: cky },
-    // 中心 patch：从中心取 ckx × cky
-    centerPatch: { left: midX, top: midY, width: ckx, height: cky },
-    // 大块完整尺寸（用于还原拉伸时的目标尺寸）
-    topFull: { left: l, top: 0, width: centerW, height: t },
-    bottomFull: { left: l, top: H - b, width: centerW, height: b },
-    leftFull: { left: 0, top: t, width: l, height: centerH },
-    rightFull: { left: W - r, top: t, width: r, height: centerH },
-    centerFull: { left: l, top: t, width: centerW, height: centerH },
-  };
-}
-
 // ============================================================
-// 核心 1：裁切 — 生成最小代表小图 buffer
+// 核心 1：裁切 — 输出最小代表小图 buffer
 // ============================================================
 
 async function buildCroppedBuffer(sourcePath, insets, centerKeep) {
@@ -107,84 +187,29 @@ async function buildCroppedBuffer(sourcePath, insets, centerKeep) {
   if (W === 0 || H === 0) throw new Error("源图尺寸无效");
   validateInsets(W, H, insets, centerKeep);
 
-  const outputSize = computeOutputSize(insets, centerKeep);
-  const { l, t, r, b } = insets;
-  const { x: ckx, y: cky } = centerKeep;
-  const rects = bandSourceRects(W, H, insets, centerKeep);
-  const src = sharp(sourcePath); // 共用一个 source pipeline 不行，每次 extract 都要 new 一个
+  const xSeg = computeCropSegments(W, insets.l, insets.r, centerKeep.x);
+  const ySeg = computeCropSegments(H, insets.t, insets.b, centerKeep.y);
 
+  // 9-slice → 9 段；横向 3-slice → 3 段；竖向 3-slice → 3 段；退化 → 1 段
   const composites = [];
-  // 4 角：原样
-  if (l > 0 && t > 0) {
-    composites.push({
-      input: await sharp(sourcePath).extract(rects.tl).toBuffer(),
-      left: 0,
-      top: 0,
-    });
-  }
-  if (r > 0 && t > 0) {
-    composites.push({
-      input: await sharp(sourcePath).extract(rects.tr).toBuffer(),
-      left: l + ckx,
-      top: 0,
-    });
-  }
-  if (l > 0 && b > 0) {
-    composites.push({
-      input: await sharp(sourcePath).extract(rects.bl).toBuffer(),
-      left: 0,
-      top: t + cky,
-    });
-  }
-  if (r > 0 && b > 0) {
-    composites.push({
-      input: await sharp(sourcePath).extract(rects.br).toBuffer(),
-      left: l + ckx,
-      top: t + cky,
-    });
-  }
-  // 上下边带 / 左右边带：取 ckx × t / l × cky 的代表
-  if (t > 0 && rects.centerW > 0) {
-    composites.push({
-      input: await sharp(sourcePath).extract(rects.topBand).toBuffer(),
-      left: l,
-      top: 0,
-    });
-  }
-  if (b > 0 && rects.centerW > 0) {
-    composites.push({
-      input: await sharp(sourcePath).extract(rects.bottomBand).toBuffer(),
-      left: l,
-      top: t + cky,
-    });
-  }
-  if (l > 0 && rects.centerH > 0) {
-    composites.push({
-      input: await sharp(sourcePath).extract(rects.leftBand).toBuffer(),
-      left: 0,
-      top: t,
-    });
-  }
-  if (r > 0 && rects.centerH > 0) {
-    composites.push({
-      input: await sharp(sourcePath).extract(rects.rightBand).toBuffer(),
-      left: l + ckx,
-      top: t,
-    });
-  }
-  // 中心 patch
-  if (rects.centerW > 0 && rects.centerH > 0) {
-    composites.push({
-      input: await sharp(sourcePath).extract(rects.centerPatch).toBuffer(),
-      left: l,
-      top: t,
-    });
+  for (const xs of xSeg.segments) {
+    for (const ys of ySeg.segments) {
+      const buf = await sharp(sourcePath)
+        .extract({
+          left: xs.srcStart,
+          top: ys.srcStart,
+          width: xs.srcSize,
+          height: ys.srcSize,
+        })
+        .toBuffer();
+      composites.push({ input: buf, left: xs.dstStart, top: ys.dstStart });
+    }
   }
 
   return sharp({
     create: {
-      width: outputSize.w,
-      height: outputSize.h,
+      width: xSeg.outSize,
+      height: ySeg.outSize,
       channels: 4,
       background: { r: 0, g: 0, b: 0, alpha: 0 },
     },
@@ -195,9 +220,10 @@ async function buildCroppedBuffer(sourcePath, insets, centerKeep) {
 }
 
 // ============================================================
-// 核心 2：还原 — 模拟 9-slice 拉伸回原尺寸
+// 核心 2：还原 — 用代表种子模拟运行时 9-slice 拉伸回原尺寸
 // ============================================================
-// 用于：1) 误差检测 — 跟原图 diff；2) 预览模式切换 — 让用户对比"原图 vs 还原图"
+// 跟裁切对应：从原图取相同的段（按 RestoreSegments 的源位置），把中心段拉到完整中心
+// 用于：1) 误差检测 — 跟原图 diff；2) 还原图预览
 
 async function buildRestoredBuffer(sourcePath, insets, centerKeep) {
   const meta = await sharp(sourcePath).metadata();
@@ -206,76 +232,29 @@ async function buildRestoredBuffer(sourcePath, insets, centerKeep) {
   if (W === 0 || H === 0) throw new Error("源图尺寸无效");
   validateInsets(W, H, insets, centerKeep);
 
-  const { l, t, r, b } = insets;
-  const rects = bandSourceRects(W, H, insets, centerKeep);
+  const xSegs = computeRestoreSegments(W, insets.l, insets.r, centerKeep.x);
+  const ySegs = computeRestoreSegments(H, insets.t, insets.b, centerKeep.y);
 
   const composites = [];
-  // 4 角：原样放回原位
-  if (l > 0 && t > 0) {
-    composites.push({
-      input: await sharp(sourcePath).extract(rects.tl).toBuffer(),
-      left: 0,
-      top: 0,
-    });
-  }
-  if (r > 0 && t > 0) {
-    composites.push({
-      input: await sharp(sourcePath).extract(rects.tr).toBuffer(),
-      left: W - r,
-      top: 0,
-    });
-  }
-  if (l > 0 && b > 0) {
-    composites.push({
-      input: await sharp(sourcePath).extract(rects.bl).toBuffer(),
-      left: 0,
-      top: H - b,
-    });
-  }
-  if (r > 0 && b > 0) {
-    composites.push({
-      input: await sharp(sourcePath).extract(rects.br).toBuffer(),
-      left: W - r,
-      top: H - b,
-    });
-  }
-  // 上下边带：取代表 → 水平拉伸到 centerW
-  if (t > 0 && rects.centerW > 0) {
-    const seed = await sharp(sourcePath).extract(rects.topBand).toBuffer();
-    const stretched = await sharp(seed)
-      .resize(rects.centerW, t, { fit: "fill" })
-      .toBuffer();
-    composites.push({ input: stretched, left: l, top: 0 });
-  }
-  if (b > 0 && rects.centerW > 0) {
-    const seed = await sharp(sourcePath).extract(rects.bottomBand).toBuffer();
-    const stretched = await sharp(seed)
-      .resize(rects.centerW, b, { fit: "fill" })
-      .toBuffer();
-    composites.push({ input: stretched, left: l, top: H - b });
-  }
-  // 左右边带
-  if (l > 0 && rects.centerH > 0) {
-    const seed = await sharp(sourcePath).extract(rects.leftBand).toBuffer();
-    const stretched = await sharp(seed)
-      .resize(l, rects.centerH, { fit: "fill" })
-      .toBuffer();
-    composites.push({ input: stretched, left: 0, top: t });
-  }
-  if (r > 0 && rects.centerH > 0) {
-    const seed = await sharp(sourcePath).extract(rects.rightBand).toBuffer();
-    const stretched = await sharp(seed)
-      .resize(r, rects.centerH, { fit: "fill" })
-      .toBuffer();
-    composites.push({ input: stretched, left: W - r, top: t });
-  }
-  // 中心
-  if (rects.centerW > 0 && rects.centerH > 0) {
-    const seed = await sharp(sourcePath).extract(rects.centerPatch).toBuffer();
-    const stretched = await sharp(seed)
-      .resize(rects.centerW, rects.centerH, { fit: "fill" })
-      .toBuffer();
-    composites.push({ input: stretched, left: l, top: t });
+  for (const xs of xSegs) {
+    for (const ys of ySegs) {
+      const extracted = await sharp(sourcePath)
+        .extract({
+          left: xs.srcStart,
+          top: ys.srcStart,
+          width: xs.srcSize,
+          height: ys.srcSize,
+        })
+        .toBuffer();
+      // 源尺寸 != 目标尺寸 → 中心段，需要 resize 拉伸
+      const final =
+        xs.srcSize === xs.dstSize && ys.srcSize === ys.dstSize
+          ? extracted
+          : await sharp(extracted)
+              .resize(xs.dstSize, ys.dstSize, { fit: "fill" })
+              .toBuffer();
+      composites.push({ input: final, left: xs.dstStart, top: ys.dstStart });
+    }
   }
 
   return sharp({
@@ -292,11 +271,11 @@ async function buildRestoredBuffer(sourcePath, insets, centerKeep) {
 }
 
 // ============================================================
-// 核心 3：还原误差 — 跟原图比对
+// 核心 3：还原误差 — 跟原图 raw 像素对比
 // ============================================================
-// 复用 image-diff 的思路：raw RGBA + max-channel-delta + 红色高亮
+// 复用 image-diff 的算法：raw RGBA + max-channel-delta + 红色高亮
 
-const DIFF_THRESHOLD = 5; // 单通道差 ≤ 5 视为"相同"（消除编码舍入噪声）
+const DIFF_THRESHOLD = 5;
 
 async function computeRestoreError(sourcePath, insets, centerKeep) {
   const restoredBuffer = await buildRestoredBuffer(
@@ -385,8 +364,9 @@ async function analyze(payload) {
   const W = meta.width || 0;
   const H = meta.height || 0;
 
-  const outputSize = computeOutputSize(insets, centerKeep);
-  const savedRatio = computeSavedRatio({ w: W, h: H }, outputSize);
+  const originalSize = { w: W, h: H };
+  const outputSize = computeOutputSize(originalSize, insets, centerKeep);
+  const savedRatio = computeSavedRatio(originalSize, outputSize);
 
   const { restoredBuffer, diffPngBuffer, stats } = await computeRestoreError(
     sourcePath,
@@ -395,7 +375,7 @@ async function analyze(payload) {
   );
 
   return {
-    originalSize: { w: W, h: H },
+    originalSize,
     outputSize,
     savedRatio,
     restoreError: stats,
@@ -429,7 +409,6 @@ async function exportCrop(payload) {
     centerKeep,
   );
 
-  // outputName 是 stem（不带扩展名）
   const cleanStem = String(outputName).replace(/\.(png|jpg|jpeg|webp)$/i, "");
   const imagePath = await core.resolveOutputPath(
     outputDir,
@@ -444,7 +423,8 @@ async function exportCrop(payload) {
 
   await fs.writeFile(imagePath, croppedBuffer);
 
-  const outputSize = computeOutputSize(insets, centerKeep);
+  const originalSize = { w: W, h: H };
+  const outputSize = computeOutputSize(originalSize, insets, centerKeep);
   const metadata = {
     version: 1,
     app: "SimpleImageCompress",
@@ -461,16 +441,16 @@ async function exportCrop(payload) {
     },
     insets,
     centerKeep,
-    center, // "stretch" / "tile"，给引擎读
+    center,
   };
   await fs.writeFile(metaPath, JSON.stringify(metadata, null, 2));
 
   return {
     croppedImagePath: imagePath,
     metadataPath: metaPath,
-    originalSize: { w: W, h: H },
+    originalSize,
     outputSize,
-    savedRatio: computeSavedRatio({ w: W, h: H }, outputSize),
+    savedRatio: computeSavedRatio(originalSize, outputSize),
   };
 }
 
@@ -495,8 +475,9 @@ module.exports = {
   register,
   __test__: {
     validateInsets,
+    computeCropSegments,
+    computeRestoreSegments,
     computeOutputSize,
     computeSavedRatio,
-    bandSourceRects,
   },
 };
