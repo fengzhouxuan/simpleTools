@@ -11,13 +11,19 @@ import type { NineSliceInsets } from "../../shared/types";
 
 type TemplateKind = "9slice" | "3h" | "3v";
 
-// 根据当前 insets 反推用了哪个模板（用户拖辅助线后 != 任一模板就显示 "custom"）
+// 根据当前 insets 的"结构"反推模板（拖辅助线让数值变化但结构不变时仍保持高亮）
+//   - 9-slice：水平和垂直都有切线（4 个 inset 不要求对称）
+//   - 横向 3-slice：仅水平有切线（T=B=0）
+//   - 竖向 3-slice：仅垂直有切线（L=R=0）
+//   - null：全 0
 function deriveTemplate(i: NineSliceInsets): TemplateKind | null {
   const { l, t, r, b } = i;
   if (l + t + r + b === 0) return null;
-  if (l > 0 && t > 0 && r > 0 && b > 0 && l === r && t === b) return "9slice";
-  if (l > 0 && r > 0 && l === r && t === 0 && b === 0) return "3h";
-  if (t > 0 && b > 0 && t === b && l === 0 && r === 0) return "3v";
+  const horizSliced = l > 0 || r > 0;
+  const vertSliced = t > 0 || b > 0;
+  if (horizSliced && vertSliced) return "9slice";
+  if (horizSliced) return "3h";
+  if (vertSliced) return "3v";
   return null;
 }
 
