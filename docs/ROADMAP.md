@@ -17,6 +17,7 @@
 - Preact + Context/Reducer 状态管理
 - IPC 命名空间化 + preload contextBridge
 - 流式进度（所有 7 个工具一致）
+- 批量任务并发（worker pool 限流，默认 4 并发；compress / atlas-unpack / atlas-incremental 都已接入）
 - macOS Settings 风格 UI（vibrancy + 主题切换）
 - ErrorBoundary 隔离工具崩溃
 - Toast 通知 + ARIA 可访问性
@@ -39,9 +40,9 @@
 ## 可做但未做（按 ROI 排序）
 
 ### 中价值
-- **批量任务并发**：当前 compress 等是串行处理文件，CPU 多核能并发 2-4 倍快。需要 `Promise.all` + 信号量
 - **首次启动引导（onboarding tour）**：首次打开高亮各工具卡片 + 示范工作流
 - **设置中心**：当前主题在标题栏、输出目录散在各工具，可以聚合到一个"设置"页
+- **CLI 模式**：让 electron app 接受 `--compress=path` 命令行（适合自动化）
 
 ### 小价值（拾遗）
 - **拖拽视觉反馈**：所有 drop zone 加更明显的 hover-dragging 高亮

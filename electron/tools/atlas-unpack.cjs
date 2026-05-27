@@ -2,6 +2,7 @@ const fs = require("fs/promises");
 const path = require("path");
 const sharp = require("sharp");
 const core = require("../core/fs.cjs");
+const { mapConcurrent, DEFAULT_CONCURRENCY } = require("../core/concurrent.cjs");
 
 // ============================================================
 // 1) 元数据格式探测：基于扩展名 + 首字符内容判断
@@ -256,11 +257,9 @@ async function unpackAtlas(payload, onProgress) {
   const outputPaths = [];
   const skipped = [];
   const startedAll = Date.now();
-  const total = frames.length;
 
-  for (let i = 0; i < frames.length; i++) {
-    const frame = frames[i];
-    onProgress?.({ current: i, total, stage: `拆出 ${frame.name}` });
+  // 单 frame 切分逻辑抽出（异常归 skipped，让 mapConcurrent 内单项失败不阻断其他）
+  const extractOne = async (frame) => {
     try {
       // 1) extract atlas 中对应矩形
       let pipeline = sharp(atlasBuffer).extract({
@@ -277,8 +276,6 @@ async function unpackAtlas(payload, onProgress) {
 
       // 3) 处理 trim：扩回 sourceSize 填透明
       if (payload.restoreOriginalSize && frame.trimmed) {
-        // rotated 还原后内容尺寸 = (frame.height, frame.width)，等价于未旋转时的子图实际占位
-        // 我们的 spriteSourceSize 是按"未旋转视角"的，所以直接用 trimX/Y 即可
         const contentBuf = await pipeline.toBuffer();
         pipeline = sharp({
           create: {
@@ -297,21 +294,31 @@ async function unpackAtlas(payload, onProgress) {
       const outPath = path.join(payload.outputDir, cleanName);
       await fs.mkdir(path.dirname(outPath), { recursive: true });
 
-      // 输出格式跟原始扩展名走；统一用 PNG 保留透明
       await pipeline.png().toFile(outPath);
-      outputPaths.push(outPath);
+      return { ok: true, outPath };
     } catch (e) {
       const reason = e instanceof Error ? e.message : String(e);
       console.error(`[atlas-unpack] skip ${frame.name}:`, reason);
-      skipped.push({ name: frame.name, reason });
+      return { ok: false, name: frame.name, reason };
     }
+  };
+
+  const itemResults = await mapConcurrent(
+    frames,
+    DEFAULT_CONCURRENCY,
+    extractOne,
+    onProgress,
+  );
+
+  for (const r of itemResults) {
+    if (r.ok) outputPaths.push(r.outPath);
+    else skipped.push({ name: r.name, reason: r.reason });
   }
 
   console.log(
     `[atlas-unpack] done: ${outputPaths.length}/${frames.length} in ${Date.now() - startedAll}ms`,
   );
 
-  onProgress?.({ current: total, total, stage: "完成" });
   return { outputPaths, skipped };
 }
 

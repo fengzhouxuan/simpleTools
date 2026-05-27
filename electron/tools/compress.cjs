@@ -3,6 +3,7 @@ const path = require("path");
 const sharp = require("sharp");
 const { optimize } = require("svgo");
 const core = require("../core/fs.cjs");
+const { mapConcurrent, DEFAULT_CONCURRENCY } = require("../core/concurrent.cjs");
 
 const MIN_TARGET_QUALITY = 20;
 const RASTER_OUTPUT_FORMATS = new Set(["original", "jpg", "png", "webp"]);
@@ -250,12 +251,8 @@ async function compressImages(payload, onProgress) {
     await core.ensureOutputDir(outputDir);
   }
 
-  const results = [];
-  const total = files.length;
-
-  for (let i = 0; i < files.length; i++) {
-    const file = files[i];
-    onProgress?.({ current: i, total, stage: `压缩 ${file.name}` });
+  // 单文件处理逻辑抽出成 mapper（保留单 try/catch，并发场景下每文件独立成败）
+  const processOne = async (file) => {
     const ext = path.extname(file.path).toLowerCase();
     const normalizedOutputFormat = RASTER_OUTPUT_FORMATS.has(outputFormat) ? outputFormat : "original";
     const nextExt = isRasterExtension(ext)
@@ -301,28 +298,28 @@ async function compressImages(payload, onProgress) {
       console.log(
         `[compress] done  ${file.name} → ${(stats.size / 1024).toFixed(1)} KB in ${Date.now() - startedAt}ms`,
       );
-      results.push({
+      return {
         ...file,
         name: path.basename(outputPath),
         outputPath,
         outputSize: stats.size,
         ratio: file.size > 0 ? Math.max(0, 1 - stats.size / file.size) : 0,
         status: "done",
-      });
+      };
     } catch (error) {
       console.error(
         `[compress] fail  ${file.name} after ${Date.now() - startedAt}ms:`,
         error instanceof Error ? error.message : error,
       );
-      results.push({
+      return {
         ...file,
         status: "failed",
         error: error instanceof Error ? error.message : "Compression failed",
-      });
+      };
     }
-  }
+  };
 
-  onProgress?.({ current: total, total, stage: "完成" });
+  const results = await mapConcurrent(files, DEFAULT_CONCURRENCY, processOne, onProgress);
   return results;
 }
 

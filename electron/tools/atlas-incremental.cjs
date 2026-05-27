@@ -4,6 +4,7 @@ const path = require("path");
 const sharp = require("sharp");
 const atlasPack = require("./atlas-pack.cjs");
 const atlasUnpack = require("./atlas-unpack.cjs");
+const { mapConcurrent, DEFAULT_CONCURRENCY } = require("../core/concurrent.cjs");
 
 // ============================================================
 // 设计：merge 模式
@@ -32,11 +33,8 @@ async function loadOldFrames(atlasPath, metadataPath) {
 
 async function extractOldFramesToTmpDir(atlasPath, frames, tmpDir, onProgress) {
   const atlasBuffer = await fs.readFile(atlasPath);
-  const out = [];
-  const total = frames.length;
-  for (let i = 0; i < frames.length; i++) {
-    const frame = frames[i];
-    onProgress?.({ current: i, total, stage: `拆出 ${frame.name}` });
+
+  const extractOne = async (frame) => {
     try {
       let pipeline = sharp(atlasBuffer).extract({
         left: frame.x,
@@ -51,12 +49,20 @@ async function extractOldFramesToTmpDir(atlasPath, frames, tmpDir, onProgress) {
       const outPath = path.join(tmpDir, cleanName);
       await fs.mkdir(path.dirname(outPath), { recursive: true });
       await pipeline.png().toFile(outPath);
-      out.push({ path: outPath, name: cleanName });
+      return { ok: true, path: outPath, name: cleanName };
     } catch (e) {
       console.error(`[atlas-incremental] extract failed ${frame.name}:`, e.message);
+      return { ok: false };
     }
-  }
-  return out;
+  };
+
+  const results = await mapConcurrent(
+    frames,
+    DEFAULT_CONCURRENCY,
+    extractOne,
+    onProgress,
+  );
+  return results.filter((r) => r.ok).map((r) => ({ path: r.path, name: r.name }));
 }
 
 // ============================================================

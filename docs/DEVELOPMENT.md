@@ -278,6 +278,11 @@ npm run dist:mac
 - [electron/core/clipboard.cjs](/Users/wepie/Documents/Github/SimpleImage/electron/core/clipboard.cjs)
   封装 `electron.clipboard.writeText`，配合 `CopyPathButton` 用
 
+- [electron/core/concurrent.cjs](/Users/wepie/Documents/Github/SimpleImage/electron/core/concurrent.cjs)
+  `mapConcurrent(items, concurrency, mapper, onProgress)` 限流并发 helper：N 个 worker 共享游标轮询消费。
+  compress / atlas-unpack / atlas-incremental 拆图阶段都用它把串行 `for` 改成并发，默认 `DEFAULT_CONCURRENCY=4`（兼顾 sharp 内部 libuv 线程池）。
+  进度报告按"已完成数"递增，并发场景下顺序无关
+
 - [electron/tools/compress.cjs](/Users/wepie/Documents/Github/SimpleImage/electron/tools/compress.cjs)
   压缩工具实现，导出 `register(ipcMain)` 注册 `tools:compress:run`：
   - `resolveSaveTarget()` 处理"原文件夹 / 覆盖原文件 / 自定义文件夹"三种输出策略
