@@ -26,10 +26,15 @@
 - Motion polish（切换 fade-in / 按下感 / hover lift）+ reduce-motion 尊重
 
 ### 工程基础设施
-- 52 个 vitest 单元测试覆盖关键纯函数
+- 59 个 vitest 单元测试覆盖关键纯函数（含 concurrent helper）
 - GitHub Actions CI（push/PR 自动跑 test + build）
 - MIT 协议 + LGPL libvips 归属（THIRD_PARTY_NOTICES）
-- 三份文档：README（产品）/ USAGE（用户）/ DEVELOPMENT（开发者）
+- 三份文档：README（产品）/ USAGE（用户）/ DEVELOPMENT（开发者）/ ROADMAP（路线）
+
+### CLI 入口
+- `bin/cli.cjs` 纯 Node 跑，6 个工具子命令（除 atlas-incremental 外）
+- electron 懒加载，让主进程模块在 node 环境也可 require
+- 退出码语义化（0 / 1 / 2）便于 shell 链式
 
 ## 明确不做（带原因）
 
@@ -42,7 +47,7 @@
 ### 中价值
 - **首次启动引导（onboarding tour）**：首次打开高亮各工具卡片 + 示范工作流
 - **设置中心**：当前主题在标题栏、输出目录散在各工具，可以聚合到一个"设置"页
-- **CLI 模式**：让 electron app 接受 `--compress=path` 命令行（适合自动化）
+- **atlas-incremental CLI 化**：当前 CLI 跳过它，因为依赖拆图缓存。要 CLI 化需要把缓存做成 disk-based 或每次重拆
 
 ### 小价值（拾遗）
 - **拖拽视觉反馈**：所有 drop zone 加更明显的 hover-dragging 高亮

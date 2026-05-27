@@ -283,6 +283,17 @@ npm run dist:mac
   compress / atlas-unpack / atlas-incremental 拆图阶段都用它把串行 `for` 改成并发，默认 `DEFAULT_CONCURRENCY=4`（兼顾 sharp 内部 libuv 线程池）。
   进度报告按"已完成数"递增，并发场景下顺序无关
 
+### 6.1.1 CLI 入口
+
+- [bin/cli.cjs](/Users/wepie/Documents/Github/SimpleImage/bin/cli.cjs)
+  纯 Node 跑（**不拉 Electron**），用 `node:util parseArgs` 解析参数。每个 subcommand 调对应主进程模块的导出函数（compress.compressImages、atlas-pack.exportAtlas 等）。
+  退出码语义：0 成功 / 1 参数或致命错误 / 2 部分失败或检测到差异。
+  package.json `bin` 字段链接到这个文件，`npm link` 后可全局用 `simpleimage` 命令。
+
+为了让 CLI 能 require 这些 `.cjs` 模块，**electron 是懒加载的**：
+- `core/fs.cjs` 顶部不再 `require("electron")`，改成 `getElectron()` 函数内 require。GUI 模式有 electron 上下文正常拿到 dialog/shell；CLI 模式只用 collectFromDirectory / ensureOutputDir 等纯函数，不触发 electron 加载
+- `core/settings.cjs` 和 `core/clipboard.cjs` 同样懒加载
+
 - [electron/tools/compress.cjs](/Users/wepie/Documents/Github/SimpleImage/electron/tools/compress.cjs)
   压缩工具实现，导出 `register(ipcMain)` 注册 `tools:compress:run`：
   - `resolveSaveTarget()` 处理"原文件夹 / 覆盖原文件 / 自定义文件夹"三种输出策略

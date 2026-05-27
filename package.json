@@ -6,7 +6,11 @@
   "author": "wepie",
   "main": "electron/main.cjs",
   "type": "module",
+  "bin": {
+    "simpleimage": "bin/cli.cjs"
+  },
   "scripts": {
+    "cli": "node bin/cli.cjs",
     "dev": "concurrently -k \"npm:dev:web\" \"npm:dev:desktop\"",
     "dev:web": "vite",
     "dev:desktop": "wait-on tcp:5173 && SIMPLEIMAGE_DEV_SERVER_URL=http://127.0.0.1:5173 electron .",

@@ -3,6 +3,8 @@
 7 个工具的具体用法、典型场景、参数含义、常见坑。如果你只是想快速跑通，直接看每节的"典型流程"。
 
 > 全局：`Cmd+1~8` 切工具，`Cmd+Enter` 跑当前工具的主操作，`Cmd+,` 打开设置（macOS 标准）。
+>
+> **CLI 模式**：除 atlas-incremental 外 6 个工具都能从命令行跑（`simpleimage <cmd>`），见末节。
 
 ---
 
@@ -262,3 +264,66 @@
 | `Cmd+Enter` | 跑当前工具的主操作（仅在可执行时生效） |
 | `Cmd+R` | 重新加载（DevTools 用） |
 | `Cmd+Opt+I` | 打开 DevTools |
+
+---
+
+## CLI 模式
+
+GUI 适合一次性操作。**重复 / 批量 / 自动化场景用 CLI** 更合适。
+
+### 安装到 PATH
+
+```bash
+# 项目根目录运行一次，把 simpleimage 命令链接到 PATH
+npm link
+
+# 之后任意目录可用
+simpleimage --help
+```
+
+或者每次显式调：
+```bash
+node /path/to/SimpleImage/bin/cli.cjs <args>
+# 或在项目根目录
+npm run cli -- <args>
+```
+
+### 6 个 subcommand 速查
+
+```bash
+# 压缩
+simpleimage compress *.png --preset web --output ./out
+simpleimage compress photo.jpg --quality 80 --format webp
+
+# 图集打包
+simpleimage atlas-pack sprites/*.png --output ./out --format plist --rotate --trim
+
+# 图集拆分
+simpleimage atlas-unpack atlas.png atlas.json --output ./extracted
+
+# 图标生成
+simpleimage icon-gen logo.png --output ./icons --targets macos-icns,windows-ico,favicon
+
+# 图片对比（不同时退出码 2，方便 CI 用）
+simpleimage image-diff before.png after.png --threshold 5 --output diff.png
+
+# 批量重命名（先 --dry-run 看 plan）
+simpleimage batch-rename *.jpg --prefix hero_ --seq --seq-digits 3 --dry-run
+simpleimage batch-rename *.jpg --prefix hero_ --seq --seq-digits 3
+```
+
+### 退出码
+
+- `0` 完全成功
+- `1` 参数错误或致命错误（输入文件不存在等）
+- `2` 跑完但部分项失败 / image-diff 检测到差异 / batch-rename 有冲突
+
+适合在 shell 里链式：
+```bash
+simpleimage image-diff golden.png actual.png && echo "✓ 图片一致" || echo "✗ 有差异"
+```
+
+### 不支持 CLI 的工具
+
+- **atlas-incremental**：依赖 GUI 的交互预览 + 拆图缓存，CLI 用价值低
+- 如果你真需要，可以 GUI 跑一次，或者直接调用 Node API（`require('.../atlas-incremental.cjs')`）

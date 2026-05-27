@@ -1,10 +1,10 @@
 const fs = require("fs/promises");
 const fsSync = require("fs");
 const path = require("path");
-const { app } = require("electron");
 
 // 简单 KV 持久化：基于 userData/settings.json，惰性加载 + 内存缓存 + 异步写盘
 // 用 namespace 风格的 key，如 "tool:compress:outputDir"
+// electron 懒加载：CLI 模式下 require 这个文件不会立即拉 electron
 
 let cache = null;     // 内存对象，null = 未加载
 let filePath = null;
@@ -12,6 +12,8 @@ let writePromise = Promise.resolve(); // 串行写盘，避免竞态
 
 function getFilePath() {
   if (!filePath) {
+    // eslint-disable-next-line global-require
+    const { app } = require("electron");
     filePath = path.join(app.getPath("userData"), "settings.json");
   }
   return filePath;

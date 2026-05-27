@@ -1,7 +1,13 @@
 const fs = require("fs/promises");
 const fsSync = require("fs");
 const path = require("path");
-const { dialog, shell } = require("electron");
+
+// 懒加载 electron：CLI 模式（纯 node）下也能 require 这个文件而不立即拉 electron。
+// 只有用到 dialog/shell 的函数（pickFiles / openPath 等）才真正触发 require。
+function getElectron() {
+  // eslint-disable-next-line global-require
+  return require("electron");
+}
 
 const SUPPORTED_EXTENSIONS = new Set([".jpg", ".jpeg", ".png", ".gif", ".svg"]);
 
@@ -104,7 +110,7 @@ async function resolveOutputPath(outputDir, fileName, collisionStrategy) {
 }
 
 async function pickFiles() {
-  const result = await dialog.showOpenDialog({
+  const result = await getElectron().dialog.showOpenDialog({
     properties: ["openFile", "multiSelections"],
     filters: [{ name: "Images", extensions: ["jpg", "jpeg", "png", "gif", "svg"] }],
   });
@@ -118,7 +124,7 @@ async function pickFiles() {
 }
 
 async function pickFolder() {
-  const result = await dialog.showOpenDialog({
+  const result = await getElectron().dialog.showOpenDialog({
     properties: ["openDirectory"],
   });
   if (result.canceled || result.filePaths.length === 0) return null;
@@ -126,7 +132,7 @@ async function pickFolder() {
 }
 
 async function pickSingleFile(filters) {
-  const result = await dialog.showOpenDialog({
+  const result = await getElectron().dialog.showOpenDialog({
     properties: ["openFile"],
     filters: Array.isArray(filters) && filters.length > 0 ? filters : undefined,
   });
@@ -156,19 +162,19 @@ async function scanDirectory(dirPath) {
 
 async function openPath(filePath) {
   // shell.openPath 返回字符串：空表示成功，非空是错误信息
-  const err = await shell.openPath(filePath);
+  const err = await getElectron().shell.openPath(filePath);
   return err ? { ok: false, error: err } : { ok: true };
 }
 
 function revealInFolder(filePath) {
-  shell.showItemInFolder(filePath);
+  getElectron().shell.showItemInFolder(filePath);
   return { ok: true };
 }
 
 // 用系统默认浏览器打开外链（首页 GitHub / 文档 链接用）
 async function openExternal(url) {
   if (!/^https?:\/\//i.test(url)) return { ok: false, error: "only http/https allowed" };
-  await shell.openExternal(url);
+  await getElectron().shell.openExternal(url);
   return { ok: true };
 }
 

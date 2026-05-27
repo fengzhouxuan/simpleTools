@@ -22,11 +22,13 @@ SimpleImageCompress 当前是一个纯本地的桌面图片压缩工具原型，
 ## 当前能力
 
 - Electron + TypeScript + Preact + Vite 桌面应用
+- 同时提供 **CLI 模式**（`simpleimage <command>`）走纯 Node，可集成到 shell / make / CI
 - macOS 系统设置风格 UI（vibrancy 毛玻璃 + 主题手动切换 auto/light/dark）
-- 应用菜单：Cmd+1~6 切工具，Cmd+Enter 触发当前工具主操作
+- 应用菜单：Cmd+1~8 切工具，Cmd+Enter 触发当前工具主操作
 - 全局通知 (toast) + 流式进度条 + 错误边界隔离工具崩溃
 - 工具首页 dashboard：能力卡片 + 推荐工作流 + GitHub 链接
 - 按工具隔离的 state；输出目录、主题等偏好自动持久化
+- 批量任务并发（默认 4 worker），多核 CPU 充分利用
 - 本地文件选择、输出目录选择
 - 拖拽导入与目录递归扫描（自动跳过隐藏文件与 node_modules 等大目录）
 - JPG / PNG / GIF 压缩
@@ -59,6 +61,21 @@ npm run dev
 ```
 
 开发模式会同时启动 Vite 和 Electron。
+
+## CLI 模式（无 GUI）
+
+```bash
+# 直接用 npm script
+npm run cli -- compress path/to/*.png --preset web --output out/
+
+# 或 node 直跑
+node bin/cli.cjs compress path/to/*.png --preset web --output out/
+
+# 装到 PATH 后（npm install --global / npm link）
+simpleimage compress path/to/*.png --preset web --output out/
+```
+
+支持全部 6 个可命令化工具：`compress / atlas-pack / atlas-unpack / icon-gen / image-diff / batch-rename`。`simpleimage --help` 看完整参数。CLI 用纯 Node 跑，不拉 Electron 进程，启动快、适合脚本集成。
 
 ## 构建与本地验证
 
