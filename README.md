@@ -64,7 +64,7 @@ SimpleImageCompress 当前是一个纯本地的桌面图片压缩工具原型，
 
 - Electron + TypeScript + Preact + Vite 桌面应用
 - 同时提供 **CLI 模式**（`simpleimage <command>`）走纯 Node，可集成到 shell / make / CI
-- macOS 系统设置风格 UI（vibrancy 毛玻璃 + 主题手动切换 auto/light/dark）
+- 明亮 SaaS 风格 UI（靛蓝主色 + 渐变 + 白卡片浮起，主题手动切换 auto/light/dark，本地 Plus Jakarta Sans / Inter 字体离线可用）
 - 应用菜单：Cmd+1~9 切工具，Cmd+Enter 触发当前工具主操作
 - 全局通知 (toast) + 流式进度条 + 错误边界隔离工具崩溃
 - 工具首页 dashboard：能力卡片 + 推荐工作流 + GitHub 链接

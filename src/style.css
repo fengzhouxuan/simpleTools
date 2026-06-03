@@ -1,42 +1,59 @@
 /* ================================================================
-   SimpleImageCompress — macOS Settings 风格
+   SimpleImageCompress — 明亮 SaaS 风格
    设计原则：
-   - 整窗 vibrancy 由 BrowserWindow 提供，body 透明
-   - 左侧边栏透出 vibrancy；右侧主区是浅灰，承载白色卡片
-   - 颜色、圆角、间距尽量贴 macOS 14+ Settings
+   - 整体冷灰蓝实色背景 + 白色卡片浮起
+   - 靛蓝主色 (#6366f1) + 渐变，柔和多层投影
+   - Plus Jakarta Sans (标题/强调) + Inter (数据)，本地 woff2，中文 fallback PingFang
    ================================================================ */
 
-:root {
-  --accent: #007aff;
-  --accent-hover: #0a84ff;
-  --accent-pressed: #0064d2;
-  --accent-soft: rgba(0, 122, 255, 0.12);
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("./assets/fonts/inter-latin.woff2") format("woff2");
+}
 
-  --text-primary: #1d1d1f;
-  --text-secondary: #6e6e73;
-  --text-tertiary: #86868b;
+@font-face {
+  font-family: "Plus Jakarta Sans";
+  font-style: normal;
+  font-weight: 500 800;
+  font-display: swap;
+  src: url("./assets/fonts/jakarta-latin.woff2") format("woff2");
+}
+
+:root {
+  --accent: #6366f1;
+  --accent-hover: #818cf8;
+  --accent-pressed: #4f46e5;
+  --accent-soft: rgba(99, 102, 241, 0.12);
+  --accent-gradient: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+
+  --text-primary: #0f172a;
+  --text-secondary: #64748b;
+  --text-tertiary: #94a3b8;
   --text-on-accent: #ffffff;
 
-  --surface-main: #f5f5f7;            /* 右侧主区底色 */
-  --surface-card: #ffffff;            /* 卡片底 */
-  --surface-card-hover: #fbfbfd;
+  --surface-main: #f8fafc;            /* SaaS 冷灰蓝整体底 */
+  --surface-card: #ffffff;            /* 卡片白底 */
+  --surface-card-hover: #f8fafc;
   --surface-input: #ffffff;
-  --surface-input-disabled: #f2f2f4;
+  --surface-input-disabled: #f1f5f9;
 
-  --hairline: rgba(0, 0, 0, 0.08);    /* macOS 经典 0.5px 分隔线感 */
-  --hairline-strong: rgba(0, 0, 0, 0.12);
+  --hairline: #e2e8f0;                /* SaaS 实色描边 */
+  --hairline-strong: #cbd5e1;
 
-  --shadow-card: 0 0 0 0.5px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-card: 0 1px 3px rgba(15, 23, 42, 0.04), 0 4px 12px -2px rgba(15, 23, 42, 0.05);
 
-  --radius-card: 12px;
-  --radius-control: 6px;
-  --radius-nav: 8px;
+  --radius-card: 16px;
+  --radius-control: 10px;
+  --radius-nav: 12px;
   --radius-pill: 999px;
 
-  --titlebar-height: 52px;
+  --titlebar-height: 56px;
 
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC",
-    "Helvetica Neue", sans-serif;
+  font-family: "Plus Jakarta Sans", "Inter", -apple-system, BlinkMacSystemFont,
+    "PingFang SC", "Helvetica Neue", sans-serif;
   font-weight: 400;
   font-synthesis: none;
   line-height: 1.4;
@@ -48,70 +65,71 @@
 
 /* manual-light override（即使系统是 dark 也强制 light） */
 :root[data-theme="light"] {
-  --accent: #007aff;
-  --accent-hover: #0a84ff;
-  --accent-pressed: #0064d2;
-  --accent-soft: rgba(0, 122, 255, 0.12);
-  --text-primary: #1d1d1f;
-  --text-secondary: #6e6e73;
-  --text-tertiary: #86868b;
+  --accent: #6366f1;
+  --accent-hover: #818cf8;
+  --accent-pressed: #4f46e5;
+  --accent-soft: rgba(99, 102, 241, 0.12);
+  --accent-gradient: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  --text-primary: #0f172a;
+  --text-secondary: #64748b;
+  --text-tertiary: #94a3b8;
   --text-on-accent: #ffffff;
-  --surface-main: #f5f5f7;
+  --surface-main: #f8fafc;
   --surface-card: #ffffff;
-  --surface-card-hover: #fbfbfd;
+  --surface-card-hover: #f8fafc;
   --surface-input: #ffffff;
-  --surface-input-disabled: #f2f2f4;
-  --hairline: rgba(0, 0, 0, 0.08);
-  --hairline-strong: rgba(0, 0, 0, 0.12);
-  --shadow-card: 0 0 0 0.5px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --surface-input-disabled: #f1f5f9;
+  --hairline: #e2e8f0;
+  --hairline-strong: #cbd5e1;
+  --shadow-card: 0 1px 3px rgba(15, 23, 42, 0.04), 0 4px 12px -2px rgba(15, 23, 42, 0.05);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --accent: #0a84ff;
-    --accent-hover: #1a90ff;
-    --accent-pressed: #006edc;
-    --accent-soft: rgba(10, 132, 255, 0.22);
+    --accent: #818cf8;
+    --accent-hover: #a5b4fc;
+    --accent-pressed: #6366f1;
+    --accent-soft: rgba(129, 140, 248, 0.20);
 
-    --text-primary: #f5f5f7;
-    --text-secondary: #98989d;
-    --text-tertiary: #6e6e73;
+    --text-primary: #f1f5f9;
+    --text-secondary: #94a3b8;
+    --text-tertiary: #64748b;
 
-    --surface-main: #1e1e1e;
-    --surface-card: #2a2a2c;
-    --surface-card-hover: #303032;
-    --surface-input: #1c1c1e;
-    --surface-input-disabled: #2a2a2c;
+    --surface-main: #0f172a;            /* slate-900 */
+    --surface-card: #1e293b;            /* slate-800 */
+    --surface-card-hover: #273449;
+    --surface-input: #1e293b;
+    --surface-input-disabled: #334155;
 
-    --hairline: rgba(255, 255, 255, 0.10);
-    --hairline-strong: rgba(255, 255, 255, 0.16);
+    --hairline: rgba(148, 163, 184, 0.16);
+    --hairline-strong: rgba(148, 163, 184, 0.28);
 
-    --shadow-card: 0 0 0 0.5px rgba(255, 255, 255, 0.06);
+    --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.3), 0 4px 12px -2px rgba(0, 0, 0, 0.35);
   }
 }
 
 /* manual-dark override */
 
   :root[data-theme="dark"] {
-    --accent: #0a84ff;
-    --accent-hover: #1a90ff;
-    --accent-pressed: #006edc;
-    --accent-soft: rgba(10, 132, 255, 0.22);
+    --accent: #818cf8;
+    --accent-hover: #a5b4fc;
+    --accent-pressed: #6366f1;
+    --accent-soft: rgba(129, 140, 248, 0.20);
 
-    --text-primary: #f5f5f7;
-    --text-secondary: #98989d;
-    --text-tertiary: #6e6e73;
+    --text-primary: #f1f5f9;
+    --text-secondary: #94a3b8;
+    --text-tertiary: #64748b;
 
-    --surface-main: #1e1e1e;
-    --surface-card: #2a2a2c;
-    --surface-card-hover: #303032;
-    --surface-input: #1c1c1e;
-    --surface-input-disabled: #2a2a2c;
+    --surface-main: #0f172a;
+    --surface-card: #1e293b;
+    --surface-card-hover: #273449;
+    --surface-input: #1e293b;
+    --surface-input-disabled: #334155;
 
-    --hairline: rgba(255, 255, 255, 0.10);
-    --hairline-strong: rgba(255, 255, 255, 0.16);
+    --hairline: rgba(148, 163, 184, 0.16);
+    --hairline-strong: rgba(148, 163, 184, 0.28);
 
-    --shadow-card: 0 0 0 0.5px rgba(255, 255, 255, 0.06);
+    --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.3), 0 4px 12px -2px rgba(0, 0, 0, 0.35);
   }
 
 
@@ -129,7 +147,7 @@ body,
 body {
   margin: 0;
   min-width: 1080px;
-  background: transparent; /* 让 vibrancy 透出 */
+  background: var(--surface-main); /* SaaS 实色背景，覆盖 vibrancy */
   overflow: hidden;
 }
 
@@ -245,9 +263,13 @@ input[type="checkbox"] {
 
 .tuya-titlebar strong {
   grid-column: 2 / 3;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-primary);
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+  background: var(--accent-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
   pointer-events: none;
   text-align: left;
   padding-left: 4px;
@@ -452,6 +474,7 @@ input[type="checkbox"] {
 .tool-placeholder,
 .tool-card {
   background: var(--surface-card);
+  border: 1px solid var(--hairline);
   border-radius: var(--radius-card);
   box-shadow: var(--shadow-card);
 }
@@ -1588,7 +1611,7 @@ input[type="checkbox"] {
 }
 
 .diff-chip.diff-modified {
-  background: rgba(0, 122, 255, 0.12);
+  background: rgba(99, 102, 241, 0.12);
 }
 .diff-chip.diff-modified strong {
   color: var(--accent);
@@ -1962,9 +1985,8 @@ input[type="checkbox"] {
 
 .tool-card.is-available:hover {
   transform: translateY(-2px);
-  box-shadow:
-    0 0 0 0.5px rgba(0, 0, 0, 0.08),
-    0 8px 20px rgba(0, 0, 0, 0.08);
+  border-color: var(--hairline-strong);
+  box-shadow: 0 12px 24px -8px rgba(99, 102, 241, 0.18);
 }
 
 :root[data-theme="dark"] .tool-card.is-available:hover {
@@ -2482,7 +2504,7 @@ select:focus-visible {
 }
 
 .guide-hit:focus {
-  fill: rgba(0, 122, 255, 0.06);
+  fill: rgba(99, 102, 241, 0.06);
 }
 
 /* 预览侧 */

@@ -29,7 +29,7 @@ SimpleImageCompress 当前是一个纯本地的 macOS 桌面图片压缩工具�
 ## 2. 技术栈
 
 - 桌面壳：Electron
-- 渲染层：TypeScript + **Preact** + Vite（参考 macOS 系统设置 UI 风格，支持暗色模式）
+- 渲染层：TypeScript + **Preact** + Vite（明亮 SaaS 风格 UI：靛蓝主色 + 渐变 + 卡片浮起，本地 Plus Jakarta Sans / Inter 字体，支持暗色模式）
 - 状态管理：Preact Context + useReducer，按工具模块隔离 state
 - 主进程图片处理：
   - `sharp` 负责 JPG / PNG / GIF / WebP 处理
@@ -89,7 +89,8 @@ SimpleImage/
 ├─ src/
 │  ├─ main.tsx                # Preact 渲染入口
 │  ├─ App.tsx                 # 根组件，承载多层 Provider + 整窗布局
-│  ├─ style.css               # 全部样式（macOS Settings 风 + 暗色 + 主题切换 + 动效）
+│  ├─ style.css               # 全部样式（SaaS 风 + 本地字体 @font-face + 暗色 + 主题切换 + 动效）
+│  ├─ assets/fonts/           # 本地 woff2（inter-latin / jakarta-latin），离线可用
 │  ├─ state/
 │  │  └─ navigation.tsx       # 全局导航 state（currentTool）+ 菜单 IPC 接入
 │  ├─ shared/
@@ -264,7 +265,7 @@ npm run dist:mac
 主进程已拆分为：
 
 - [electron/main.cjs](/Users/wepie/Documents/Github/SimpleImage/electron/main.cjs)
-  入口。`createWindow()` 创建窗口（含 `vibrancy: "sidebar"` 取毛玻璃 + `webSecurity: false` 允许 file:// 预览）。`buildMenu(window)` 注册 native menu（"工具" 子菜单含 Cmd+1~6 切工具 / "视图" 子菜单含主题切换），通过 `webContents.send` 把菜单事件发到渲染层（app:navigate / app:set-theme）。
+  入口。`createWindow()` 创建窗口（仍保留 `vibrancy: "sidebar"`，但 SaaS 风格用实色背景 `--surface-main` 盖住毛玻璃 + `webSecurity: false` 允许 file:// 预览）。`buildMenu(window)` 注册 native menu（"工具" 子菜单含 Cmd+1~6 切工具 / "视图" 子菜单含主题切换），通过 `webContents.send` 把菜单事件发到渲染层（app:navigate / app:set-theme）。
   注册顺序：core.fs → settings → clipboard → 各 tool。
   保留 `did-fail-load` / `preload-error` / `render-process-gone` 错误日志。
   设 `SIMPLEIMAGE_DEBUG=1` 启动时会自动打开 DevTools。

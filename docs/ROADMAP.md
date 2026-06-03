@@ -20,7 +20,7 @@
 - IPC 命名空间化 + preload contextBridge
 - 流式进度（所有 7 个工具一致）
 - 批量任务并发（worker pool 限流，默认 4 并发；compress / atlas-unpack / atlas-incremental 都已接入）
-- macOS Settings 风格 UI（vibrancy + 主题切换）
+- 明亮 SaaS 风格 UI（靛蓝主色 + 渐变 + 卡片浮起 + 主题切换，本地 woff2 字体）
 - ErrorBoundary 隔离工具崩溃
 - Toast 通知 + ARIA 可访问性
 - 应用菜单 + 全局快捷键（Cmd+1~9 切工具 / Cmd+Enter 主操作）
